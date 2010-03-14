@@ -1,0 +1,12 @@
+pytest-capturelog
+=================
+
+py.test plugin to capture log messages
+
+Installation with pip::
+
+    pip install pytest-capturelog
+
+Installation with easy install::
+
+    easy_install pytest-capturelog

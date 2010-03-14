@@ -1,0 +1,21 @@
+import setuptools
+
+setuptools.setup(name='pytest-capturelog',
+                 version='0.1',
+                 description='py.test plugin to capture log messages',
+                 long_description=open('README').read().strip(),
+                 author='Meme Dough',
+                 author_email='memedough@gmail.com',
+                 url='http://bitbucket.org/memedough/pytest-capturelog/overview',
+                 py_modules=['pytest_capturelog'],
+                 install_requires=['py>=1.1.1'],
+                 entry_points={'pytest11': ['pytest_capturelog = pytest_capturelog']},
+                 license='MIT License',
+                 zip_safe=False,
+                 keywords='py.test pytest',
+                 classifiers=['Development Status :: 4 - Beta',
+                              'Intended Audience :: Developers',
+                              'License :: OSI Approved :: MIT License',
+                              'Operating System :: POSIX :: Linux',
+                              'Programming Language :: Python',
+                              'Topic :: Software Development :: Testing'])
