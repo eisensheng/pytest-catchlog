@@ -4,7 +4,7 @@ import py
 import logging
 
 def pytest_addoption(parser):
-    """Adds options to py.test for controlling log capturing."""
+    """Add options to control log capturing."""
 
     group = parser.getgroup('general')
     group.addoption('--nocapturelog',
@@ -13,47 +13,80 @@ def pytest_addoption(parser):
                     default=True,
                     help='disable log capture')
 
+def pytest_configure(config):
+    """Activate log capturing if appropriate."""
 
-def pytest_runtest_setup(item):
-    """Start capturing log messages for this test."""
+    if config.getvalue('capturelog'):
+        config.pluginmanager.register(Capturer(), 'capturelog')
 
-    if item.config.getvalue('capturelog'):
+class Capturer(object):
+    """Attaches to the logging module and captures log messages for each test."""
 
-        # Create a logging handler for this test.
-        item.capturelog_stream = py.io.TextIO()
-        item.capturelog_handler = logging.StreamHandler(item.capturelog_stream)
-        item.capturelog_formatter = logging.Formatter('%(asctime)s %(levelname)-8s: %(message)s')
-        item.capturelog_handler.setFormatter(item.capturelog_formatter)
+    def __init__(self):
+        """Create a new capturer.
+
+        Establish a handler that collects all log messages from the
+        root logger.
+        """
+
+        # Create a logging handler for the entire test session.
+        self.stream = py.io.TextIO()
+        self.formatter = logging.Formatter('%(asctime)s %(levelname)-8s: %(message)s')
+        self.handler = logging.StreamHandler(self.stream)
+        self.handler.setFormatter(self.formatter)
 
         # Attach the logging handler to the root logger.
-        root_logger = logging.getLogger()
-        root_logger.addHandler(item.capturelog_handler)
-        root_logger.setLevel(logging.NOTSET)
+        self.logger = logging.getLogger()
+        self.logger.addHandler(self.handler)
+        self.logger.setLevel(logging.NOTSET)
 
+    def pytest_runtest_setup(self, item):
+        """Start capturing log messages for this test.
 
-def pytest_runtest_teardown(item):
-    """Stop capturing log messages for this test."""
+        The handler is directed to put all log messages into the
+        stream for this specific test.
+        """
 
-    if item.config.getvalue('capturelog'):
+        item.capturelog_stream = py.io.TextIO()
+        self.handler.stream = item.capturelog_stream
 
-        # Detach the logging handler from the root logger.
-        logging.getLogger().removeHandler(item.capturelog_handler)
+    def pytest_runtest_teardown(self, item):
+        """Stop capturing log messages for this test.
 
+        The handler is directed to put any log messages that occur
+        outside of a test into the stream owned by the capturer.
+        """
 
-def pytest_runtest_makereport(__multicall__, item, call):
-    """Add captured log messages for this report."""
+        self.handler.stream = self.stream
+        item.capturelog_stream.close()
+        del item.capturelog_stream
 
-    report = __multicall__.execute()
+    def pytest_runtest_makereport(self, __multicall__, item, call):
+        """Add captured log messages for this report."""
 
-    if item.config.getvalue('capturelog'):
+        report = __multicall__.execute()
 
-        # For failed tests that have captured log messages add a
-        # captured log section to the report.
-        if not report.passed:
-            longrepr = getattr(report, 'longrepr', None)
-            if hasattr(longrepr, 'addsection'):
-                log = item.capturelog_stream.getvalue()
-                if log:
-                    longrepr.addsection('Captured log', log)
+        # This fn called after setup, call and teardown.  Only
+        # interested in just after test call has finished.
+        if call.when == 'call':
 
-    return report
+            # For failed tests that have captured log messages add a
+            # captured log section to the report.
+            if not report.passed:
+                longrepr = getattr(report, 'longrepr', None)
+                if hasattr(longrepr, 'addsection'):
+                    log = item.capturelog_stream.getvalue().strip()
+                    if log:
+                        longrepr.addsection('Captured log', log)
+
+        return report
+
+    def pytest_terminal_summary(self, terminalreporter):
+        """Report any log messages that occurred outside of tests."""
+
+        log = self.stream.getvalue().strip()
+        if log:
+            tw = terminalreporter._tw
+            tw.sep('-', 'Session captured log (occurred outside of any test)')
+            tw.write(log)
+            tw.write('\n')
