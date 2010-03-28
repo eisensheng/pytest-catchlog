@@ -3,10 +3,23 @@ pytest-capturelog
 
 py.test plugin to capture log messages
 
-Installation with pip::
+Usage
+-----
+
+Log messages are captured by default and for each failed test will be
+shown in the same manner as captured stdout and stderr.
+
+Capturing of logs can be disabled with::
+
+    py.test --nocapturelog
+
+Installation
+------------
+
+With pip::
 
     pip install pytest-capturelog
 
-Installation with easy install::
+With easy install::
 
     easy_install pytest-capturelog
