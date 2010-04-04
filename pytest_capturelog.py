@@ -1,7 +1,6 @@
 """py.test plugin to capture log messages"""
 
 import py
-import logging
 
 def pytest_addoption(parser):
     """Add options to control log capturing."""
@@ -28,6 +27,9 @@ class Capturer(object):
         Establish a handler that collects all log messages from the
         root logger.
         """
+
+        # Import here so that we only import if we are going to capture.
+        import logging
 
         # Create a logging handler for the entire test session.
         self.stream = py.io.TextIO()
