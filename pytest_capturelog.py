@@ -5,23 +5,31 @@ import py
 def pytest_addoption(parser):
     """Add options to control log capturing."""
 
-    group = parser.getgroup('general')
+    group = parser.getgroup('capturelog', 'log capturing')
     group.addoption('--nocapturelog',
                     dest='capturelog',
                     action='store_false',
                     default=True,
                     help='disable log capture')
+    group.addoption('--log-format',
+                    dest='log_format',
+                    default='%(filename)-25s %(lineno)4d %(levelname)-8s %(message)s',
+                    help='log format as used by the logging module')
+    group.addoption('--log-date-format',
+                    dest='log_date_format',
+                    default=None,
+                    help='log date format as used by the logging module')
 
 def pytest_configure(config):
     """Activate log capturing if appropriate."""
 
     if config.getvalue('capturelog'):
-        config.pluginmanager.register(Capturer(), 'capturelog')
+        config.pluginmanager.register(Capturer(config), 'capturelog')
 
 class Capturer(object):
     """Attaches to the logging module and captures log messages for each test."""
 
-    def __init__(self):
+    def __init__(self, config):
         """Create a new capturer.
 
         Establish a handler that collects all log messages from the
@@ -33,7 +41,8 @@ class Capturer(object):
 
         # Create a logging handler for the entire test session.
         self.stream = py.io.TextIO()
-        self.formatter = logging.Formatter('%(asctime)s %(levelname)-8s: %(message)s')
+        self.formatter = logging.Formatter(config.getvalue('log_format'),
+                                           config.getvalue('log_date_format'))
         self.handler = logging.StreamHandler(self.stream)
         self.handler.setFormatter(self.formatter)
 
