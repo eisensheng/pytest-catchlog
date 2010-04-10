@@ -1,6 +1,7 @@
 """py.test plugin to capture log messages"""
 
 import py
+import logging
 
 def pytest_addoption(parser):
     """Add options to control log capturing."""
@@ -30,47 +31,36 @@ class Capturer(object):
     """Attaches to the logging module and captures log messages for each test."""
 
     def __init__(self, config):
-        """Create a new capturer.
+        """Creates a new capturer.
 
-        Establish a handler that collects all log messages from the
-        root logger.
+        The formatter can be safely shared across all handlers so
+        create a single one for the entire test session here.
         """
 
-        # Import here so that we only import if we are going to capture.
-        import logging
-
-        # Create a logging handler for the entire test session.
-        self.stream = py.io.TextIO()
         self.formatter = logging.Formatter(config.getvalue('log_format'),
                                            config.getvalue('log_date_format'))
-        self.handler = logging.StreamHandler(self.stream)
-        self.handler.setFormatter(self.formatter)
-
-        # Attach the logging handler to the root logger.
-        self.logger = logging.getLogger()
-        self.logger.addHandler(self.handler)
-        self.logger.setLevel(logging.NOTSET)
 
     def pytest_runtest_setup(self, item):
         """Start capturing log messages for this test.
 
-        The handler is directed to put all log messages into the
-        stream for this specific test.
+        Creating a specific handler and stream for each test ensures
+        that we avoid multi threading issues.
+
+        Attaching the handler and setting the level at the beginning
+        of each test ensures that we are setup to capture log
+        messages.
         """
 
+        # Create a handler and stream for this test.
         item.capturelog_stream = py.io.TextIO()
-        self.handler.stream = item.capturelog_stream
+        item.capturelog_handler = logging.StreamHandler(item.capturelog_stream)
+        item.capturelog_handler.setFormatter(self.formatter)
 
-    def pytest_runtest_teardown(self, item):
-        """Stop capturing log messages for this test.
-
-        The handler is directed to put any log messages that occur
-        outside of a test into the stream owned by the capturer.
-        """
-
-        self.handler.stream = self.stream
-        item.capturelog_stream.close()
-        del item.capturelog_stream
+        # Attach the handler to the root logger and ensure that the
+        # root logger is set to log all levels.
+        root_logger = logging.getLogger()
+        root_logger.addHandler(item.capturelog_handler)
+        root_logger.setLevel(logging.NOTSET)
 
     def pytest_runtest_makereport(self, __multicall__, item, call):
         """Add captured log messages for this report."""
@@ -81,6 +71,11 @@ class Capturer(object):
         # interested in just after test call has finished.
         if call.when == 'call':
 
+            # Detach the handler from the root logger to ensure no
+            # further access to the handler and stream.
+            root_logger = logging.getLogger()
+            root_logger.removeHandler(item.capturelog_handler)
+
             # For failed tests that have captured log messages add a
             # captured log section to the report.
             if not report.passed:
@@ -90,14 +85,10 @@ class Capturer(object):
                     if log:
                         longrepr.addsection('Captured log', log)
 
+            # Release the handler and stream resources.
+            item.capturelog_handler.close()
+            item.capturelog_stream.close()
+            del item.capturelog_handler
+            del item.capturelog_stream
+
         return report
-
-    def pytest_terminal_summary(self, terminalreporter):
-        """Report any log messages that occurred outside of tests."""
-
-        log = self.stream.getvalue().strip()
-        if log:
-            tw = terminalreporter._tw
-            tw.sep('-', 'Session captured log (occurred outside of any test)')
-            tw.write(log)
-            tw.write('\n')

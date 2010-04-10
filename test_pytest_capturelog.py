@@ -1,19 +1,6 @@
 import py
 
-pytest_plugins = "pytester", "capturelog"
-
-def test_no_logging_import(testdir):
-    testdir.makepyfile('''
-        import sys
-
-        def test_foo():
-            assert 'logging' not in sys.modules, 'logging was imported'
-        ''')
-    result = testdir.runpytest('--nocapturelog')
-    assert result.ret == 0
-    assert result.stdout.fnmatch_lines([
-            '*1 passed*'
-            ])
+pytest_plugins = 'pytester', 'capturelog'
 
 def test_nothing_logged(testdir):
     testdir.makepyfile('''

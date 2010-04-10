@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(name='pytest-capturelog',
-                 version='0.3',
+                 version='0.4',
                  description='py.test plugin to capture log messages',
                  long_description=open('README').read().strip(),
                  author='Meme Dough',
@@ -16,6 +16,6 @@ setuptools.setup(name='pytest-capturelog',
                  classifiers=['Development Status :: 4 - Beta',
                               'Intended Audience :: Developers',
                               'License :: OSI Approved :: MIT License',
-                              'Operating System :: POSIX :: Linux',
+                              'Operating System :: OS Independent',
                               'Programming Language :: Python',
                               'Topic :: Software Development :: Testing'])
