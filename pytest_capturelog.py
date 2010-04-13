@@ -1,4 +1,72 @@
-"""py.test plugin to capture log messages"""
+"""capture output of logging module. 
+
+Installation
+------------
+
+You can install the `pytest-capturelog pypi`_ package 
+with pip::
+
+    pip install pytest-capturelog 
+
+or with easy install::
+
+    easy_install pytest-capturelog
+
+.. _`pytest-capturelog pypi`: http://pypi.python.org/pypi/pytest-capturelog/
+
+Usage
+-----
+
+If the plugin is installed log messages are captured by default and for
+each failed test will be shown in the same manner as captured stdout and
+stderr.
+
+Running without options::
+
+    py.test test_capturelog.py
+
+Shows failed tests like so::
+
+    -------------------------- Captured log ---------------------------
+    test_capturelog.py          26 INFO     text going to logger
+    ------------------------- Captured stdout -------------------------
+    text going to stdout
+    ------------------------- Captured stderr -------------------------
+    text going to stderr
+    ==================== 2 failed in 0.02 seconds =====================
+
+By default each captured log message shows the module, line number,
+log level and message.  Showing the exact module and line number is
+useful for testing and debugging.  If desired the log format and date
+format can be specified to anything that the logging module supports.
+
+Running pytest specifying formatting options::
+
+    py.test --log-format="%(asctime)s %(levelname)s %(message)s" --log-date-format="%Y-%m-%d %H:%M:%S" test_capturelog.py
+
+Shows failed tests like so::
+
+    -------------------------- Captured log ---------------------------
+    2010-04-10 14:48:44 INFO text going to logger
+    ------------------------- Captured stdout -------------------------
+    text going to stdout
+    ------------------------- Captured stderr -------------------------
+    text going to stderr
+    ==================== 2 failed in 0.02 seconds =====================
+
+Further it is possible to disable capturing of logs completely with::
+
+    py.test --nocapturelog test_capturelog.py
+
+Shows failed tests in the normal manner as no logs were captured::
+
+    ------------------------- Captured stdout -------------------------
+    text going to stdout
+    ------------------------- Captured stderr -------------------------
+    text going to stderr
+    ==================== 2 failed in 0.02 seconds =====================
+
+"""
 
 import py
 import logging
@@ -25,7 +93,7 @@ def pytest_configure(config):
     """Activate log capturing if appropriate."""
 
     if config.getvalue('capturelog'):
-        config.pluginmanager.register(Capturer(config), 'capturelog')
+        config.pluginmanager.register(Capturer(config), '_capturelog')
 
 class Capturer(object):
     """Attaches to the logging module and captures log messages for each test."""
