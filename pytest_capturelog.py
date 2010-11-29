@@ -81,6 +81,17 @@ temporarily change the log level::
         with capturelog(logging.INFO):
             pass
 
+Lastly the LogRecord instances sent to the logger during the test run
+are also available on the function argument.  This is useful for when
+you want to assert on the contents of a message::
+
+    def test_baz(capturelog):
+        func_under_test()
+        for record in capturelog.raw_records:
+            assert record.levelname != 'CRITICAL'
+
+For all the available attributes of the log records see the
+``logging.LogRecord`` class.
 """
 
 import py
@@ -123,6 +134,14 @@ class CapturelogHandler(logging.StreamHandler):
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.level = self.__enter_level
+
+    def emit(self, record):
+        """Keep the raw records in a buffer as well"""
+        try:
+            self.raw_records.append(record)
+        except AttributeError:
+            self.raw_records = [record]
+        logging.StreamHandler.emit(self, record)
 
 
 class Capturer(object):

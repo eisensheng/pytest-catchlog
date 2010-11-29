@@ -85,3 +85,18 @@ def test_with_statement(testdir):
     assert fnmatch(['*- Captured log -*', '*INFO level*'])
     py.test.raises(AssertionError,
                    fnmatch, ['*- Captured log -*', '*DEBUG level*'])
+
+def test_raw_record(testdir):
+    testdir.makepyfile('''
+        import sys
+        import logging
+
+        pytest_plugins = 'capturelog'
+
+        def test_foo(capturelog):
+            logging.getLogger().info('boo %s', 'arg')
+            assert capturelog.raw_records[0].levelname == 'INFO'
+            assert capturelog.raw_records[0].msg == 'boo %s'
+        ''')
+    result = testdir.runpytest()
+    assert result.ret == 0
