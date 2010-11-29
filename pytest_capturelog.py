@@ -1,12 +1,12 @@
-"""capture output of logging module. 
+"""capture output of logging module.
 
 Installation
 ------------
 
-You can install the `pytest-capturelog pypi`_ package 
+You can install the `pytest-capturelog pypi`_ package
 with pip::
 
-    pip install pytest-capturelog 
+    pip install pytest-capturelog
 
 or with easy install::
 
@@ -66,6 +66,21 @@ Shows failed tests in the normal manner as no logs were captured::
     text going to stderr
     ==================== 2 failed in 0.02 seconds =====================
 
+
+Inside tests it is possible to change the loglevel for the captured
+log messages.  This is supported by the ``capturelog`` funcarg::
+
+    def test_foo(capturelog):
+        capturelog.setLevel(logging.INFO)
+        pass
+
+It is also possible to use the capturelog as a context manager to
+temporarily change the log level::
+
+    def test_bar(capturelog):
+        with capturelog(logging.INFO):
+            pass
+
 """
 
 import py
@@ -95,6 +110,21 @@ def pytest_configure(config):
     if config.getvalue('capturelog'):
         config.pluginmanager.register(Capturer(config), '_capturelog')
 
+
+class CapturelogHandler(logging.StreamHandler):
+    def __call__(self, level):
+        self.__tmp_level = level
+        return self
+
+    def __enter__(self):
+        self.__enter_level = self.level
+        self.level = self.__tmp_level
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.level = self.__enter_level
+
+
 class Capturer(object):
     """Attaches to the logging module and captures log messages for each test."""
 
@@ -121,8 +151,10 @@ class Capturer(object):
 
         # Create a handler and stream for this test.
         item.capturelog_stream = py.io.TextIO()
-        item.capturelog_handler = logging.StreamHandler(item.capturelog_stream)
+        item.capturelog_handler = CapturelogHandler(item.capturelog_stream)
         item.capturelog_handler.setFormatter(self.formatter)
+        item.function.capturelog_handler = item.capturelog_handler
+        item.capturelog_loglevel = logging.getLogger().level
 
         # Attach the handler to the root logger and ensure that the
         # root logger is set to log all levels.
@@ -159,4 +191,15 @@ class Capturer(object):
             del item.capturelog_handler
             del item.capturelog_stream
 
+            # Restore loglevel
+            root_logger.setLevel(item.capturelog_loglevel)
+
         return report
+
+    def pytest_funcarg__capturelog(self, request):
+        """Returns the log handler configured for this logger
+
+        This can be used to modify the loglevel or format inside a
+        test.
+        """
+        return request.function.capturelog_handler

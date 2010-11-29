@@ -54,6 +54,20 @@ Shows failed tests in the normal manner as no logs were captured::
     text going to stderr
     ==================== 2 failed in 0.02 seconds =====================
 
+Inside tests it is possible to change the loglevel for the captured
+log messages.  This is supported by the ``capturelog`` funcarg::
+
+    def test_foo(capturelog):
+        capturelog.setLevel(logging.INFO)
+        pass
+
+It is also possible to use the capturelog as a context manager to
+temporarily change the log level::
+
+    def test_bar(capturelog):
+        with capturelog(logging.INFO):
+            pass
+
 Installation
 ------------
 

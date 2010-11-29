@@ -41,3 +41,47 @@ def test_messages_logged(testdir):
     assert fnmatch(['*- Captured log -*', '*text going to logger*'])
     assert fnmatch(['*- Captured stdout -*', 'text going to stdout'])
     assert fnmatch(['*- Captured stderr -*', 'text going to stderr'])
+
+def test_change_level(testdir):
+    testdir.makepyfile('''
+        import sys
+        import logging
+
+        pytest_plugins = 'capturelog'
+
+        def test_foo(capturelog):
+            capturelog.setLevel(logging.INFO)
+            log = logging.getLogger()
+            log.debug('DEBUG level')
+            log.info('INFO level')
+            assert False
+        ''')
+    result = testdir.runpytest()
+    assert result.ret == 1
+    fnmatch = result.stdout.fnmatch_lines
+    assert fnmatch(['*- Captured log -*', '*INFO level*'])
+    py.test.raises(AssertionError,
+                   fnmatch, ['*- Captured log -*', '*DEBUG level*'])
+
+@py.test.mark.skipif('sys.version_info < (2,5)')
+def test_with_statement(testdir):
+    testdir.makepyfile('''
+        from __future__ import with_statement
+        import sys
+        import logging
+
+        pytest_plugins = 'capturelog'
+
+        def test_foo(capturelog):
+            log = logging.getLogger()
+            with capturelog(logging.INFO):
+                log.debug('DEBUG level')
+                log.info('INFO level')
+            assert False
+        ''')
+    result = testdir.runpytest()
+    assert result.ret == 1
+    fnmatch = result.stdout.fnmatch_lines
+    assert fnmatch(['*- Captured log -*', '*INFO level*'])
+    py.test.raises(AssertionError,
+                   fnmatch, ['*- Captured log -*', '*DEBUG level*'])
