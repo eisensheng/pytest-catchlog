@@ -27,6 +27,8 @@ def test_messages_logged(testdir):
         import sys
         import logging
 
+        pytest_plugins = 'capturelog'
+
         def test_foo():
             sys.stdout.write('text going to stdout')
             sys.stderr.write('text going to stderr')
@@ -35,11 +37,7 @@ def test_messages_logged(testdir):
         ''')
     result = testdir.runpytest()
     assert result.ret == 1
-    assert result.stdout.fnmatch_lines([
-            '*- Captured log -*',
-            '*text going to logger*',
-            '*- Captured stdout -*',
-            'text going to stdout',
-            '*- Captured stderr -*',
-            'text going to stderr'
-            ])
+    fnmatch = result.stdout.fnmatch_lines
+    assert fnmatch(['*- Captured log -*', '*text going to logger*'])
+    assert fnmatch(['*- Captured stdout -*', 'text going to stdout'])
+    assert fnmatch(['*- Captured stderr -*', 'text going to stderr'])
