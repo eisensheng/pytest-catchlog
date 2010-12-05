@@ -18,7 +18,7 @@ def test_nothing_logged(testdir):
     assert result.ret == 1
     result.stdout.fnmatch_lines(['*- Captured stdout -*', 'text going to stdout'])
     result.stdout.fnmatch_lines(['*- Captured stderr -*', 'text going to stderr'])
-    py.test.raises(AssertionError, result.stdout.fnmatch_lines, ['*- Captured log -*'])
+    py.test.raises(Exception, result.stdout.fnmatch_lines, ['*- Captured log -*'])
 
 def test_messages_logged(testdir):
     testdir.makepyfile('''
@@ -62,8 +62,8 @@ def test_change_level(testdir):
     result = testdir.runpytest()
     assert result.ret == 1
     result.stdout.fnmatch_lines(['*- Captured log -*', '*handler INFO level*', '*logger CRITICAL level*'])
-    py.test.raises(AssertionError, result.stdout.fnmatch_lines, ['*- Captured log -*', '*handler DEBUG level*'])
-    py.test.raises(AssertionError, result.stdout.fnmatch_lines, ['*- Captured log -*', '*logger WARNING level*'])
+    py.test.raises(Exception, result.stdout.fnmatch_lines, ['*- Captured log -*', '*handler DEBUG level*'])
+    py.test.raises(Exception, result.stdout.fnmatch_lines, ['*- Captured log -*', '*logger WARNING level*'])
 
 @py.test.mark.skipif('sys.version_info < (2,5)')
 def test_with_statement(testdir):
@@ -90,8 +90,8 @@ def test_with_statement(testdir):
     result = testdir.runpytest()
     assert result.ret == 1
     result.stdout.fnmatch_lines(['*- Captured log -*', '*handler INFO level*', '*logger CRITICAL level*'])
-    py.test.raises(AssertionError, result.stdout.fnmatch_lines, ['*- Captured log -*', '*handler DEBUG level*'])
-    py.test.raises(AssertionError, result.stdout.fnmatch_lines, ['*- Captured log -*', '*logger WARNING level*'])
+    py.test.raises(Exception, result.stdout.fnmatch_lines, ['*- Captured log -*', '*handler DEBUG level*'])
+    py.test.raises(Exception, result.stdout.fnmatch_lines, ['*- Captured log -*', '*logger WARNING level*'])
 
 def test_log_access(testdir):
     testdir.makepyfile('''
