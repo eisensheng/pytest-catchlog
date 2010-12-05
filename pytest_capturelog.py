@@ -3,16 +3,12 @@
 Installation
 ------------
 
-You can install the `pytest-capturelog pypi`_ package
-with pip::
+The `pytest-capturelog`_ package may be installed with pip or easy_install::
 
     pip install pytest-capturelog
-
-or with easy install::
-
     easy_install pytest-capturelog
 
-.. _`pytest-capturelog pypi`: http://pypi.python.org/pypi/pytest-capturelog/
+.. _`pytest-capturelog`: http://pypi.python.org/pypi/pytest-capturelog/
 
 Usage
 -----
@@ -66,29 +62,45 @@ Shows failed tests in the normal manner as no logs were captured::
     text going to stderr
     ==================== 2 failed in 0.02 seconds =====================
 
-
-Inside tests it is possible to change the loglevel for the captured
+Inside tests it is possible to change the log level for the captured
 log messages.  This is supported by the ``capturelog`` funcarg::
 
     def test_foo(capturelog):
         capturelog.setLevel(logging.INFO)
         pass
 
-It is also possible to use the capturelog as a context manager to
-temporarily change the log level::
+By default the level is set on the handler used to capture the log
+messages, however as a convenience it is also possible to set the log
+level of any logger::
+
+    def test_foo(capturelog):
+        capturelog.setLevel(logging.CRITICAL, logger='root.baz')
+        pass
+
+It is also possible to use a context manager to temporarily change the
+log level::
 
     def test_bar(capturelog):
-        with capturelog(logging.INFO):
+        with capturelog.atLevel(logging.INFO):
             pass
 
-Lastly the LogRecord instances sent to the logger during the test run
-are also available on the function argument.  This is useful for when
-you want to assert on the contents of a message::
+Again, by default the level of the handler is affected but the level
+of any logger can be changed instead with::
+
+    def test_bar(capturelog):
+        with capturelog.atLevel(logging.CRITICAL, logger='root.baz'):
+            pass
+
+Lastly all the logs sent to the logger during the test run are made
+available on the funcarg in the form of both the LogRecord instances
+and the final log text.  This is useful for when you want to assert on
+the contents of a message::
 
     def test_baz(capturelog):
         func_under_test()
-        for record in capturelog.raw_records:
+        for record in capturelog.records():
             assert record.levelname != 'CRITICAL'
+        assert 'wally' not in capturelog.text()
 
 For all the available attributes of the log records see the
 ``logging.LogRecord`` class.
@@ -115,40 +127,19 @@ def pytest_addoption(parser):
                     default=None,
                     help='log date format as used by the logging module')
 
+
 def pytest_configure(config):
     """Activate log capturing if appropriate."""
 
     if config.getvalue('capturelog'):
-        config.pluginmanager.register(Capturer(config), '_capturelog')
+        config.pluginmanager.register(CaptureLogPlugin(config), '_capturelog')
 
 
-class CapturelogHandler(logging.StreamHandler):
-    def __call__(self, level):
-        self.__tmp_level = level
-        return self
-
-    def __enter__(self):
-        self.__enter_level = self.level
-        self.level = self.__tmp_level
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.level = self.__enter_level
-
-    def emit(self, record):
-        """Keep the raw records in a buffer as well"""
-        try:
-            self.raw_records.append(record)
-        except AttributeError:
-            self.raw_records = [record]
-        logging.StreamHandler.emit(self, record)
-
-
-class Capturer(object):
+class CaptureLogPlugin(object):
     """Attaches to the logging module and captures log messages for each test."""
 
     def __init__(self, config):
-        """Creates a new capturer.
+        """Creates a new plugin to capture log messges.
 
         The formatter can be safely shared across all handlers so
         create a single one for the entire test session here.
@@ -160,20 +151,17 @@ class Capturer(object):
     def pytest_runtest_setup(self, item):
         """Start capturing log messages for this test.
 
-        Creating a specific handler and stream for each test ensures
-        that we avoid multi threading issues.
+        Creating a specific handler for each test ensures that we
+        avoid multi threading issues.
 
         Attaching the handler and setting the level at the beginning
         of each test ensures that we are setup to capture log
         messages.
         """
 
-        # Create a handler and stream for this test.
-        item.capturelog_stream = py.io.TextIO()
-        item.capturelog_handler = CapturelogHandler(item.capturelog_stream)
+        # Create a handler for this test.
+        item.capturelog_handler = CaptureLogHandler()
         item.capturelog_handler.setFormatter(self.formatter)
-        item.function.capturelog_handler = item.capturelog_handler
-        item.capturelog_loglevel = logging.getLogger().level
 
         # Attach the handler to the root logger and ensure that the
         # root logger is set to log all levels.
@@ -191,7 +179,7 @@ class Capturer(object):
         if call.when == 'call':
 
             # Detach the handler from the root logger to ensure no
-            # further access to the handler and stream.
+            # further access to the handler.
             root_logger = logging.getLogger()
             root_logger.removeHandler(item.capturelog_handler)
 
@@ -200,25 +188,102 @@ class Capturer(object):
             if not report.passed:
                 longrepr = getattr(report, 'longrepr', None)
                 if hasattr(longrepr, 'addsection'):
-                    log = item.capturelog_stream.getvalue().strip()
+                    log = item.capturelog_handler.stream.getvalue().strip()
                     if log:
                         longrepr.addsection('Captured log', log)
 
-            # Release the handler and stream resources.
+            # Release the handler resources.
             item.capturelog_handler.close()
-            item.capturelog_stream.close()
             del item.capturelog_handler
-            del item.capturelog_stream
-
-            # Restore loglevel
-            root_logger.setLevel(item.capturelog_loglevel)
 
         return report
 
     def pytest_funcarg__capturelog(self, request):
-        """Returns the log handler configured for this logger
+        """Returns a funcarg to access and control log capturing."""
 
-        This can be used to modify the loglevel or format inside a
-        test.
+        return CaptureLogFuncArg(request._pyfuncitem.capturelog_handler)
+
+
+class CaptureLogHandler(logging.StreamHandler):
+    """A logging handler that stores log records and the log text."""
+
+    def __init__(self):
+        """Creates a new log handler."""
+
+        logging.StreamHandler.__init__(self)
+        self.stream = py.io.TextIO()
+        self.records  = []
+
+    def close(self):
+        """Close this log handler and its underlying stream."""
+
+        logging.StreamHandler.close(self)
+        self.stream.close()
+
+    def emit(self, record):
+        """Keep the log records in a list in addition to the log text."""
+
+        self.records.append(record)
+        logging.StreamHandler.emit(self, record)
+
+
+class CaptureLogFuncArg(object):
+    """Provides access and control of log capturing."""
+
+    def __init__(self, handler):
+        """Creates a new funcarg."""
+
+        self.handler = handler
+
+    def text(self):
+        """Returns the log text."""
+
+        return self.handler.stream.getvalue()
+
+    def records(self):
+        """Returns the list of log records."""
+
+        return self.handler.records
+
+    def setLevel(self, level, logger=None):
+        """Sets the level for capturing of logs.
+
+        By default, the level is set on the handler used to capture
+        logs. Specify a logger name to instead set the level of any
+        logger.
         """
-        return request.function.capturelog_handler
+
+        obj = logger and logging.getLogger(logger) or self.handler
+        obj.setLevel(level)
+
+    def atLevel(self, level, logger=None):
+        """Context manager that sets the level for capturing of logs.
+
+        By default, the level is set on the handler used to capture
+        logs. Specify a logger name to instead set the level of any
+        logger.
+        """
+
+        obj = logger and logging.getLogger(logger) or self.handler
+        return CaptureLogLevel(obj, level)
+
+
+class CaptureLogLevel(object):
+    """Context manager that sets the logging level of a handler or logger."""
+
+    def __init__(self, obj, level):
+        """Creates a new log level context manager."""
+
+        self.obj = obj
+        self.level = level
+
+    def __enter__(self):
+        """Adjust the log level."""
+
+        self.orig_level = self.obj.level
+        self.obj.setLevel(self.level)
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Restore the log level."""
+
+        self.obj.setLevel(self.orig_level)

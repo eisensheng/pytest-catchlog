@@ -3,11 +3,22 @@ pytest-capturelog
 
 py.test plugin to capture log messages
 
+Installation
+------------
+
+The `pytest-capturelog`_ package may be installed with pip or easy_install::
+
+    pip install pytest-capturelog
+    easy_install pytest-capturelog
+
+.. _`pytest-capturelog`: http://pypi.python.org/pypi/pytest-capturelog/
+
 Usage
 -----
 
-Log messages are captured by default and for each failed test will be
-shown in the same manner as captured stdout and stderr.
+If the plugin is installed log messages are captured by default and for
+each failed test will be shown in the same manner as captured stdout and
+stderr.
 
 Running without options::
 
@@ -54,39 +65,45 @@ Shows failed tests in the normal manner as no logs were captured::
     text going to stderr
     ==================== 2 failed in 0.02 seconds =====================
 
-Inside tests it is possible to change the loglevel for the captured
+Inside tests it is possible to change the log level for the captured
 log messages.  This is supported by the ``capturelog`` funcarg::
 
     def test_foo(capturelog):
         capturelog.setLevel(logging.INFO)
         pass
 
-It is also possible to use the capturelog as a context manager to
-temporarily change the log level::
+By default the level is set on the handler used to capture the log
+messages, however as a convenience it is also possible to set the log
+level of any logger::
+
+    def test_foo(capturelog):
+        capturelog.setLevel(logging.CRITICAL, logger='root.baz')
+        pass
+
+It is also possible to use a context manager to temporarily change the
+log level::
 
     def test_bar(capturelog):
-        with capturelog(logging.INFO):
+        with capturelog.atLevel(logging.INFO):
             pass
 
-Lastly the LogRecord instances sent to the logger during the test run
-are also available on the function argument.  This is useful for when
-you want to assert on the contents of a message::
+Again, by default the level of the handler is affected but the level
+of any logger can be changed instead with::
+
+    def test_bar(capturelog):
+        with capturelog.atLevel(logging.CRITICAL, logger='root.baz'):
+            pass
+
+Lastly all the logs sent to the logger during the test run are made
+available on the funcarg in the form of both the LogRecord instances
+and the final log text.  This is useful for when you want to assert on
+the contents of a message::
 
     def test_baz(capturelog):
         func_under_test()
-        for record in capturelog.raw_records:
+        for record in capturelog.records():
             assert record.levelname != 'CRITICAL'
+        assert 'wally' not in capturelog.text()
 
 For all the available attributes of the log records see the
 ``logging.LogRecord`` class.
-
-Installation
-------------
-
-With pip::
-
-    pip install pytest-capturelog
-
-With easy install::
-
-    easy_install pytest-capturelog
