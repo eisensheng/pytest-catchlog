@@ -108,3 +108,9 @@ def test_log_access(testdir):
         ''')
     result = testdir.runpytest()
     assert result.ret == 0
+
+def test_funcarg_help(testdir):
+    result = testdir.runpytest("--funcargs")
+    result.stdout.fnmatch_lines([
+        "*capturelog*",
+    ])

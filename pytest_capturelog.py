@@ -198,10 +198,9 @@ class CaptureLogPlugin(object):
 
         return report
 
-    def pytest_funcarg__capturelog(self, request):
-        """Returns a funcarg to access and control log capturing."""
-
-        return CaptureLogFuncArg(request._pyfuncitem.capturelog_handler)
+def pytest_funcarg__capturelog(request):
+    """Returns a funcarg to access and control log capturing."""
+    return CaptureLogFuncArg(request._pyfuncitem.capturelog_handler)
 
 
 class CaptureLogHandler(logging.StreamHandler):
