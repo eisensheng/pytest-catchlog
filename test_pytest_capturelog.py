@@ -46,13 +46,13 @@ def test_change_level(testdir):
 
         pytest_plugins = 'capturelog'
 
-        def test_foo(capturelog):
-            capturelog.setLevel(logging.INFO)
+        def test_foo(caplog):
+            caplog.setLevel(logging.INFO)
             log = logging.getLogger()
             log.debug('handler DEBUG level')
             log.info('handler INFO level')
 
-            capturelog.setLevel(logging.CRITICAL, logger='root.baz')
+            caplog.setLevel(logging.CRITICAL, logger='root.baz')
             log = logging.getLogger('root.baz')
             log.warning('logger WARNING level')
             log.critical('logger CRITICAL level')
@@ -74,13 +74,13 @@ def test_with_statement(testdir):
 
         pytest_plugins = 'capturelog'
 
-        def test_foo(capturelog):
-            with capturelog.atLevel(logging.INFO):
+        def test_foo(caplog):
+            with caplog.atLevel(logging.INFO):
                 log = logging.getLogger()
                 log.debug('handler DEBUG level')
                 log.info('handler INFO level')
 
-                with capturelog.atLevel(logging.CRITICAL, logger='root.baz'):
+                with caplog.atLevel(logging.CRITICAL, logger='root.baz'):
                     log = logging.getLogger('root.baz')
                     log.warning('logger WARNING level')
                     log.critical('logger CRITICAL level')
@@ -100,17 +100,15 @@ def test_log_access(testdir):
 
         pytest_plugins = 'capturelog'
 
-        def test_foo(capturelog):
+        def test_foo(caplog):
             logging.getLogger().info('boo %s', 'arg')
-            assert capturelog.records()[0].levelname == 'INFO'
-            assert capturelog.records()[0].msg == 'boo %s'
-            assert 'boo arg' in capturelog.text()
+            assert caplog.records()[0].levelname == 'INFO'
+            assert caplog.records()[0].msg == 'boo %s'
+            assert 'boo arg' in caplog.text()
         ''')
     result = testdir.runpytest()
     assert result.ret == 0
 
 def test_funcarg_help(testdir):
-    result = testdir.runpytest("--funcargs")
-    result.stdout.fnmatch_lines([
-        "*capturelog*",
-    ])
+    result = testdir.runpytest('--funcargs')
+    result.stdout.fnmatch_lines(['*caplog*'])

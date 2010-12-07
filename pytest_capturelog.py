@@ -63,32 +63,32 @@ Shows failed tests in the normal manner as no logs were captured::
     ==================== 2 failed in 0.02 seconds =====================
 
 Inside tests it is possible to change the log level for the captured
-log messages.  This is supported by the ``capturelog`` funcarg::
+log messages.  This is supported by the ``caplog`` funcarg::
 
-    def test_foo(capturelog):
-        capturelog.setLevel(logging.INFO)
+    def test_foo(caplog):
+        caplog.setLevel(logging.INFO)
         pass
 
 By default the level is set on the handler used to capture the log
 messages, however as a convenience it is also possible to set the log
 level of any logger::
 
-    def test_foo(capturelog):
-        capturelog.setLevel(logging.CRITICAL, logger='root.baz')
+    def test_foo(caplog):
+        caplog.setLevel(logging.CRITICAL, logger='root.baz')
         pass
 
 It is also possible to use a context manager to temporarily change the
 log level::
 
-    def test_bar(capturelog):
-        with capturelog.atLevel(logging.INFO):
+    def test_bar(caplog):
+        with caplog.atLevel(logging.INFO):
             pass
 
 Again, by default the level of the handler is affected but the level
 of any logger can be changed instead with::
 
-    def test_bar(capturelog):
-        with capturelog.atLevel(logging.CRITICAL, logger='root.baz'):
+    def test_bar(caplog):
+        with caplog.atLevel(logging.CRITICAL, logger='root.baz'):
             pass
 
 Lastly all the logs sent to the logger during the test run are made
@@ -96,11 +96,11 @@ available on the funcarg in the form of both the LogRecord instances
 and the final log text.  This is useful for when you want to assert on
 the contents of a message::
 
-    def test_baz(capturelog):
+    def test_baz(caplog):
         func_under_test()
-        for record in capturelog.records():
+        for record in caplog.records():
             assert record.levelname != 'CRITICAL'
-        assert 'wally' not in capturelog.text()
+        assert 'wally' not in caplog.text()
 
 For all the available attributes of the log records see the
 ``logging.LogRecord`` class.
@@ -198,10 +198,6 @@ class CaptureLogPlugin(object):
 
         return report
 
-def pytest_funcarg__capturelog(request):
-    """Returns a funcarg to access and control log capturing."""
-    return CaptureLogFuncArg(request._pyfuncitem.capturelog_handler)
-
 
 class CaptureLogHandler(logging.StreamHandler):
     """A logging handler that stores log records and the log text."""
@@ -286,3 +282,15 @@ class CaptureLogLevel(object):
         """Restore the log level."""
 
         self.obj.setLevel(self.orig_level)
+
+
+def pytest_funcarg__caplog(request):
+    """Returns a funcarg to access and control log capturing."""
+
+    return CaptureLogFuncArg(request._pyfuncitem.capturelog_handler)
+
+
+def pytest_funcarg__capturelog(request):
+    """Returns a funcarg to access and control log capturing."""
+
+    return CaptureLogFuncArg(request._pyfuncitem.capturelog_handler)

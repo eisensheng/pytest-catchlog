@@ -1,7 +1,7 @@
 import setuptools
 
 setuptools.setup(name='pytest-capturelog',
-                 version='0.6',
+                 version='0.7',
                  description='py.test plugin to capture log messages',
                  long_description=open('README').read().strip(),
                  author='Meme Dough',
