@@ -1,13 +1,13 @@
 import py
 
-pytest_plugins = 'pytester', 'capturelog'
+pytest_plugins = 'pytester', 'catchlog'
 
 def test_nothing_logged(testdir):
     testdir.makepyfile('''
         import sys
         import logging
 
-        pytest_plugins = 'capturelog'
+        pytest_plugins = 'catchlog'
 
         def test_foo():
             sys.stdout.write('text going to stdout')
@@ -25,7 +25,7 @@ def test_messages_logged(testdir):
         import sys
         import logging
 
-        pytest_plugins = 'capturelog'
+        pytest_plugins = 'catchlog'
 
         def test_foo():
             sys.stdout.write('text going to stdout')
@@ -44,7 +44,7 @@ def test_change_level(testdir):
         import sys
         import logging
 
-        pytest_plugins = 'capturelog'
+        pytest_plugins = 'catchlog'
 
         def test_foo(caplog):
             caplog.setLevel(logging.INFO)
@@ -72,7 +72,7 @@ def test_with_statement(testdir):
         import sys
         import logging
 
-        pytest_plugins = 'capturelog'
+        pytest_plugins = 'catchlog'
 
         def test_foo(caplog):
             with caplog.atLevel(logging.INFO):
@@ -98,7 +98,7 @@ def test_log_access(testdir):
         import sys
         import logging
 
-        pytest_plugins = 'capturelog'
+        pytest_plugins = 'catchlog'
 
         def test_foo(caplog):
             logging.getLogger().info('boo %s', 'arg')

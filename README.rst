@@ -1,17 +1,17 @@
-pytest-capturelog
-=================
+pytest-catchlog
+===============
 
-py.test plugin to capture log messages
+py.test plugin to catch log messages
 
 Installation
 ------------
 
-The `pytest-capturelog`_ package may be installed with pip or easy_install::
+The `pytest-catchlog`_ package may be installed with pip or easy_install::
 
-    pip install pytest-capturelog
-    easy_install pytest-capturelog
+    pip install pytest-catchlog
+    easy_install pytest-catchlog
 
-.. _`pytest-capturelog`: http://pypi.python.org/pypi/pytest-capturelog/
+.. _`pytest-catchlog`: http://pypi.python.org/pypi/pytest-catchlog/
 
 Usage
 -----
@@ -22,12 +22,12 @@ stderr.
 
 Running without options::
 
-    py.test test_capturelog.py
+    py.test test_catchlog.py
 
 Shows failed tests like so::
 
     -------------------------- Captured log ---------------------------
-    test_capturelog.py          26 INFO     text going to logger
+    test_catchlogs.py          26 INFO     text going to logger
     ------------------------- Captured stdout -------------------------
     text going to stdout
     ------------------------- Captured stderr -------------------------
@@ -41,7 +41,8 @@ format can be specified to anything that the logging module supports.
 
 Running pytest specifying formatting options::
 
-    py.test --log-format="%(asctime)s %(levelname)s %(message)s" --log-date-format="%Y-%m-%d %H:%M:%S" test_capturelog.py
+    py.test --log-format="%(asctime)s %(levelname)s %(message)s" \
+            --log-date-format="%Y-%m-%d %H:%M:%S" test_capturelog.py
 
 Shows failed tests like so::
 
@@ -55,9 +56,9 @@ Shows failed tests like so::
 
 Further it is possible to disable capturing of logs completely with::
 
-    py.test --nocapturelog test_capturelog.py
+    py.test --nocatchlog test_catchlog.py
 
-Shows failed tests in the normal manner as no logs were captured::
+Shows failed tests in the normal manner as no logs were captured:
 
     ------------------------- Captured stdout -------------------------
     text going to stdout
@@ -72,7 +73,7 @@ log messages.  This is supported by the ``caplog`` funcarg::
         caplog.setLevel(logging.INFO)
         pass
 
-By default the level is set on the handler used to capture the log
+By default the level is set on the handler used to catch the log
 messages, however as a convenience it is also possible to set the log
 level of any logger::
 
