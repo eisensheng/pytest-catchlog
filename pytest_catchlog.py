@@ -143,6 +143,16 @@ class CatchLogFuncArg(object):
 
         return self.handler.records
 
+    def record_tuples(self):
+        """Returns a list of a striped down version of log records intended
+        for use in assertion comparison.
+
+        The format of the tuple is:
+
+            (logger_name, log_level, message)
+        """
+        return [(r.name, r.levelno, r.getMessage()) for r in self.records()]
+
     def set_level(self, level, logger=None):
         """Sets the level for capturing of logs.
 

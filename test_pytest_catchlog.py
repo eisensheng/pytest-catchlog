@@ -132,3 +132,21 @@ def test_log_access(testdir):
 def test_funcarg_help(testdir):
     result = testdir.runpytest('--funcargs')
     result.stdout.fnmatch_lines(['*caplog*'])
+
+
+def test_record_tuples(testdir):
+    testdir.makepyfile('''
+        import sys
+        import logging
+
+        pytest_plugins = 'catchlog'
+
+        def test_foo(caplog):
+            logging.getLogger().info('boo %s', 'arg')
+
+            assert caplog.record_tuples() == [
+                ('root', logging.INFO, 'boo arg'),
+            ]
+        ''')
+    result = testdir.runpytest()
+    assert result.ret == 0
