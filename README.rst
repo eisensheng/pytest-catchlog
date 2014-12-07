@@ -22,7 +22,7 @@ stderr.
 
 Running without options::
 
-    py.test test_catchlog.py
+    py.test test_pytest_catchlog.py
 
 Shows failed tests like so::
 
@@ -56,7 +56,7 @@ Shows failed tests like so::
 
 Further it is possible to disable capturing of logs completely with::
 
-    py.test --nocatchlog test_catchlog.py
+    py.test --nocatchlog test_pytest_catchlog.py
 
 Shows failed tests in the normal manner as no logs were captured:
 

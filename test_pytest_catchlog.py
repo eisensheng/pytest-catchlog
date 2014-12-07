@@ -17,9 +17,9 @@ def test_nothing_logged(testdir):
         ''')
     result = testdir.runpytest()
     assert result.ret == 1
-    result.stdout.fnmatch_lines(['*- Captured stdout -*',
+    result.stdout.fnmatch_lines(['*- Captured stdout call -*',
                                  'text going to stdout'])
-    result.stdout.fnmatch_lines(['*- Captured stderr -*',
+    result.stdout.fnmatch_lines(['*- Captured stderr call -*',
                                  'text going to stderr'])
     py.test.raises(Exception, result.stdout.fnmatch_lines,
                    ['*- Captured log -*'])
@@ -42,9 +42,9 @@ def test_messages_logged(testdir):
     assert result.ret == 1
     result.stdout.fnmatch_lines(['*- Captured log -*',
                                  '*text going to logger*'])
-    result.stdout.fnmatch_lines(['*- Captured stdout -*',
+    result.stdout.fnmatch_lines(['*- Captured stdout call -*',
                                  'text going to stdout'])
-    result.stdout.fnmatch_lines(['*- Captured stderr -*',
+    result.stdout.fnmatch_lines(['*- Captured stderr call -*',
                                  'text going to stderr'])
 
 
@@ -56,12 +56,12 @@ def test_change_level(testdir):
         pytest_plugins = 'catchlog'
 
         def test_foo(caplog):
-            caplog.setLevel(logging.INFO)
+            caplog.set_level(logging.INFO)
             log = logging.getLogger()
             log.debug('handler DEBUG level')
             log.info('handler INFO level')
 
-            caplog.setLevel(logging.CRITICAL, logger='root.baz')
+            caplog.set_level(logging.CRITICAL, logger='root.baz')
             log = logging.getLogger('root.baz')
             log.warning('logger WARNING level')
             log.critical('logger CRITICAL level')
@@ -89,12 +89,12 @@ def test_with_statement(testdir):
         pytest_plugins = 'catchlog'
 
         def test_foo(caplog):
-            with caplog.atLevel(logging.INFO):
+            with caplog.at_level(logging.INFO):
                 log = logging.getLogger()
                 log.debug('handler DEBUG level')
                 log.info('handler INFO level')
 
-                with caplog.atLevel(logging.CRITICAL, logger='root.baz'):
+                with caplog.at_level(logging.CRITICAL, logger='root.baz'):
                     log = logging.getLogger('root.baz')
                     log.warning('logger WARNING level')
                     log.critical('logger CRITICAL level')
