@@ -1,0 +1,30 @@
+### Python template
+# Byte-compiled / optimized / Native Library Files
+__pycache__/
+*.py[cod]
+*.so
+
+# Distribution / packaging
+.Python
+/env/
+/build/
+/develop-eggs/
+/dist/
+/downloads/
+/eggs/
+/lib/
+/lib64/
+/parts/
+/sdist/
+/var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.cache
+nosetests.xml
+coverage.xml

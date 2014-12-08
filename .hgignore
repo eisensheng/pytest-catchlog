@@ -1,9 +1,0 @@
-syntax: glob
-
-*~
-*.pyo
-*.pyc
-*egg-info
-build
-dist
-env*
