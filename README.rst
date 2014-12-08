@@ -42,7 +42,7 @@ format can be specified to anything that the logging module supports.
 Running pytest specifying formatting options::
 
     py.test --log-format="%(asctime)s %(levelname)s %(message)s" \
-            --log-date-format="%Y-%m-%d %H:%M:%S" test_capturelog.py
+            --log-date-format="%Y-%m-%d %H:%M:%S" test_pytest_catchlog.py
 
 Shows failed tests like so::
 
@@ -108,3 +108,14 @@ the contents of a message::
 
 For all the available attributes of the log records see the
 ``logging.LogRecord`` class.
+
+You can also resort to ``record_tuples`` if all you want to do is to ensure,
+that certain messages have been logged under a given logger name with a
+given severity and message::
+
+    def test_foo(caplog):
+        logging.getLogger().info('boo %s', 'arg')
+
+        assert caplog.record_tuples() == [
+            ('root', logging.INFO, 'boo arg'),
+        ]
