@@ -58,7 +58,7 @@ Further it is possible to disable capturing of logs completely with::
 
     py.test --nocatchlog test_pytest_catchlog.py
 
-Shows failed tests in the normal manner as no logs were captured:
+Shows failed tests in the normal manner as no logs were captured::
 
     ------------------------- Captured stdout -------------------------
     text going to stdout
