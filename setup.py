@@ -18,11 +18,11 @@ def _get_version():
 
 
 setup(name='pytest-catchlog',
-      version='0.7',
+      version=_get_version(),
       description='py.test plugin to catch log messages',
       long_description=_read_text_file('README.rst'),
-      author='Meme Dough',
-      author_email='memedough@gmail.com',
+      author='Arthur Skowronek',  # original author: Meme Dough
+      author_email='eisensheng@mailbox.org',
       url='https://bitbucket.org/eisensheng/pytest-catchlog',
       py_modules=['pytest_catchlog', ],
       install_requires=['py>=1.1.1', ],
