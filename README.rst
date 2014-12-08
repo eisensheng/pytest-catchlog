@@ -1,7 +1,10 @@
 pytest-catchlog
 ===============
 
-py.test plugin to catch log messages
+py.test plugin to catch log messages.  This is a fork of `pytest-capturelog`_.
+
+.. _`pytest-capturelog`: https://pypi.python.org/pypi/pytest-capturelog/
+
 
 Installation
 ------------
@@ -12,6 +15,7 @@ The `pytest-catchlog`_ package may be installed with pip or easy_install::
     easy_install pytest-catchlog
 
 .. _`pytest-catchlog`: http://pypi.python.org/pypi/pytest-catchlog/
+
 
 Usage
 -----
@@ -27,7 +31,7 @@ Running without options::
 Shows failed tests like so::
 
     -------------------------- Captured log ---------------------------
-    test_catchlogs.py          26 INFO     text going to logger
+    test_pytest_catchlog.py    26 INFO     text going to logger
     ------------------------- Captured stdout -------------------------
     text going to stdout
     ------------------------- Captured stderr -------------------------
@@ -119,3 +123,4 @@ given severity and message::
         assert caplog.record_tuples() == [
             ('root', logging.INFO, 'boo arg'),
         ]
+

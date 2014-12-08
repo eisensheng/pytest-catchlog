@@ -19,7 +19,8 @@ def _get_version():
 
 setup(name='pytest-catchlog',
       version=_get_version(),
-      description='py.test plugin to catch log messages',
+      description=('py.test plugin to catch log messages.'
+                   ' This is a fork of pytest-capturelog.'),
       long_description=_read_text_file('README.rst'),
       author='Arthur Skowronek',  # original author: Meme Dough
       author_email='eisensheng@mailbox.org',
