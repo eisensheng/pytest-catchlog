@@ -58,9 +58,10 @@ Shows failed tests like so::
     text going to stderr
     ==================== 2 failed in 0.02 seconds =====================
 
-Further it is possible to disable capturing of logs completely with::
+Further it is possible to disable reporting logs on failed tests
+completely with::
 
-    py.test --nocatchlog test_pytest_catchlog.py
+    py.test --no-print-logs test_pytest_catchlog.py
 
 Shows failed tests in the normal manner as no logs were captured::
 

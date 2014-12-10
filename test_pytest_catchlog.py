@@ -150,3 +150,27 @@ def test_record_tuples(testdir):
         ''')
     result = testdir.runpytest()
     assert result.ret == 0
+
+
+def test_disable_log_capturing(testdir):
+    testdir.makepyfile('''
+        import sys
+        import logging
+
+        pytest_plugins = 'catchlog'
+
+        def test_foo(caplog):
+            sys.stdout.write('text going to stdout')
+            logging.getLogger().warning('catch me if you can!')
+            sys.stderr.write('text going to stderr')
+            assert False
+        ''')
+    result = testdir.runpytest('--no-print-logs')
+    print(result.stdout)
+    assert result.ret == 1
+    result.stdout.fnmatch_lines(['*- Captured stdout call -*',
+                                 'text going to stdout'])
+    result.stdout.fnmatch_lines(['*- Captured stderr call -*',
+                                 'text going to stderr'])
+    py.test.raises(Exception, result.stdout.fnmatch_lines,
+                   ['*- Captured log -*'])
