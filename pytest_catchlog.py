@@ -7,34 +7,31 @@ import logging
 import py
 
 
-__version__ = '1.0'
+__version__ = '1.1'
 
 
 def pytest_addoption(parser):
     """Add options to control log capturing."""
 
-    group = parser.getgroup('catchlog', 'log capturing')
-    group.addoption('--nocatchlog',
-                    dest='log_catch',
-                    action='store_false',
-                    default=True,
-                    help='disable log catching')
+    group = parser.getgroup('catchlog', 'Log catching.')
+    group.addoption('--no-print-logs',
+                    dest='log_print', action='store_false', default=True,
+                    help='disable printing caught logs on failed tests.')
     group.addoption('--log-format',
                     dest='log_format',
                     default=('%(filename)-25s %(lineno)4d'
                              ' %(levelname)-8s %(message)s'),
-                    help='log format as used by the logging module')
+                    help='log format as used by the logging module.')
     group.addoption('--log-date-format',
-                    dest='log_date_format',
-                    default=None,
-                    help='log date format as used by the logging module')
+                    dest='log_date_format', default=None,
+                    help='log date format as used by the logging module.')
 
 
 def pytest_configure(config):
-    """Activate log capturing if appropriate."""
-
-    if config.getvalue('log_catch'):
-        config.pluginmanager.register(CatchLogPlugin(config), '_catch_log')
+    """Always register the log catcher plugin with py.test or tests can't
+    find the  fixture function.
+    """
+    config.pluginmanager.register(CatchLogPlugin(config), '_catch_log')
 
 
 class CatchLogPlugin(object):
@@ -47,7 +44,7 @@ class CatchLogPlugin(object):
         The formatter can be safely shared across all handlers so
         create a single one for the entire test session here.
         """
-
+        self.print_logs = config.getvalue('log_print')
         self.formatter = logging.Formatter(config.getvalue('log_format'),
                                            config.getvalue('log_date_format'))
 
@@ -87,8 +84,8 @@ class CatchLogPlugin(object):
             root_logger.removeHandler(item.catch_log_handler)
 
             # For failed tests that have captured log messages add a
-            # captured log section to the report.
-            if not report.passed:
+            # captured log section to the report if desired.
+            if not report.passed and self.print_logs:
                 long_repr = getattr(report, 'longrepr', None)
                 if hasattr(long_repr, 'addsection'):
                     log = item.catch_log_handler.stream.getvalue().strip()

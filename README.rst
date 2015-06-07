@@ -1,7 +1,10 @@
 pytest-catchlog
 ===============
 
-py.test plugin to catch log messages
+py.test plugin to catch log messages.  This is a fork of `pytest-capturelog`_.
+
+.. _`pytest-capturelog`: https://pypi.python.org/pypi/pytest-capturelog/
+
 
 Installation
 ------------
@@ -12,6 +15,7 @@ The `pytest-catchlog`_ package may be installed with pip or easy_install::
     easy_install pytest-catchlog
 
 .. _`pytest-catchlog`: http://pypi.python.org/pypi/pytest-catchlog/
+
 
 Usage
 -----
@@ -27,7 +31,7 @@ Running without options::
 Shows failed tests like so::
 
     -------------------------- Captured log ---------------------------
-    test_catchlogs.py          26 INFO     text going to logger
+    test_pytest_catchlog.py    26 INFO     text going to logger
     ------------------------- Captured stdout -------------------------
     text going to stdout
     ------------------------- Captured stderr -------------------------
@@ -42,7 +46,7 @@ format can be specified to anything that the logging module supports.
 Running pytest specifying formatting options::
 
     py.test --log-format="%(asctime)s %(levelname)s %(message)s" \
-            --log-date-format="%Y-%m-%d %H:%M:%S" test_capturelog.py
+            --log-date-format="%Y-%m-%d %H:%M:%S" test_pytest_catchlog.py
 
 Shows failed tests like so::
 
@@ -54,11 +58,12 @@ Shows failed tests like so::
     text going to stderr
     ==================== 2 failed in 0.02 seconds =====================
 
-Further it is possible to disable capturing of logs completely with::
+Further it is possible to disable reporting logs on failed tests
+completely with::
 
-    py.test --nocatchlog test_pytest_catchlog.py
+    py.test --no-print-logs test_pytest_catchlog.py
 
-Shows failed tests in the normal manner as no logs were captured:
+Shows failed tests in the normal manner as no logs were captured::
 
     ------------------------- Captured stdout -------------------------
     text going to stdout
@@ -108,3 +113,15 @@ the contents of a message::
 
 For all the available attributes of the log records see the
 ``logging.LogRecord`` class.
+
+You can also resort to ``record_tuples`` if all you want to do is to ensure,
+that certain messages have been logged under a given logger name with a
+given severity and message::
+
+    def test_foo(caplog):
+        logging.getLogger().info('boo %s', 'arg')
+
+        assert caplog.record_tuples() == [
+            ('root', logging.INFO, 'boo arg'),
+        ]
+
