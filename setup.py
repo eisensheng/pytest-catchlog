@@ -22,9 +22,9 @@ setup(name='pytest-catchlog',
       description=('py.test plugin to catch log messages.'
                    ' This is a fork of pytest-capturelog.'),
       long_description=_read_text_file('README.rst'),
-      author='Arthur Skowronek',  # original author: Meme Dough
+      author='Arthur Skowronek (Fork Author)',  # original author: Meme Dough
       author_email='eisensheng@mailbox.org',
-      url='https://bitbucket.org/eisensheng/pytest-catchlog',
+      url='https://github.com/eisensheng/pytest-catchlog',
       py_modules=['pytest_catchlog', ],
       install_requires=['py>=1.1.1', ],
       entry_points={'pytest11': ['pytest_catchlog = pytest_catchlog']},
