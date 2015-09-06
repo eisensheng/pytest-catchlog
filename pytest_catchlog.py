@@ -10,21 +10,34 @@ import py
 __version__ = '1.1'
 
 
+def add_option_ini(parser, option, dest, default=None, help=None):
+    parser.addini(dest, default=default,
+                  help='default value for ' + option)
+    parser.getgroup('catchlog').addoption(option, dest=dest, help=help)
+
+def get_option_ini(config, name):
+    ret = config.getoption(name)  # 'default' arg won't work as expected
+    if ret is None:
+        ret = config.getini(name)
+    return ret
+
+
 def pytest_addoption(parser):
     """Add options to control log capturing."""
 
-    group = parser.getgroup('catchlog', 'Log catching.')
+    group = parser.getgroup('catchlog', 'Log catching')
     group.addoption('--no-print-logs',
                     dest='log_print', action='store_false', default=True,
                     help='disable printing caught logs on failed tests.')
-    group.addoption('--log-format',
-                    dest='log_format',
-                    default=('%(filename)-25s %(lineno)4d'
-                             ' %(levelname)-8s %(message)s'),
-                    help='log format as used by the logging module.')
-    group.addoption('--log-date-format',
-                    dest='log_date_format', default=None,
-                    help='log date format as used by the logging module.')
+    add_option_ini(parser,
+                   '--log-format',
+                   dest='log_format', default=('%(filename)-25s %(lineno)4d'
+                                               ' %(levelname)-8s %(message)s'),
+                   help='log format as used by the logging module.')
+    add_option_ini(parser,
+                   '--log-date-format',
+                   dest='log_date_format', default=None,
+                   help='log date format as used by the logging module.')
 
 
 def pytest_configure(config):
@@ -44,9 +57,10 @@ class CatchLogPlugin(object):
         The formatter can be safely shared across all handlers so
         create a single one for the entire test session here.
         """
-        self.print_logs = config.getvalue('log_print')
-        self.formatter = logging.Formatter(config.getvalue('log_format'),
-                                           config.getvalue('log_date_format'))
+        self.print_logs = config.getoption('log_print')
+        self.formatter = logging.Formatter(
+                get_option_ini(config, 'log_format'),
+                get_option_ini(config, 'log_date_format'))
 
     def pytest_runtest_setup(self, item):
         """Start capturing log messages for this test.
