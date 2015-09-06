@@ -58,6 +58,18 @@ Shows failed tests like so::
     text going to stderr
     ==================== 2 failed in 0.02 seconds =====================
 
+These options can also be customized through a configuration file::
+
+    [pytest]
+    log_format = %(asctime)s %(levelname)s %(message)s
+    log_date_format = %Y-%m-%d %H:%M:%S
+
+Although the same effect could be achieved through the ``addopts`` setting,
+using dedicated options should be preferred since the latter doesn't
+force other developers to have ``pytest-catchlog`` installed (while at
+the same time, ``addopts`` approach would fail with 'unrecognized arguments'
+error). Command line arguments take precedence.
+
 Further it is possible to disable reporting logs on failed tests
 completely with::
 
