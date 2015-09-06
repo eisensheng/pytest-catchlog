@@ -9,7 +9,7 @@ Version 1.2
 
 Yet to be released.
 
-- [Feature] #6 - Configure logging message and date format through ini file.
+- [Feature] #6 - Configure logging message and date format through ini file. (Thanks to @abusalimov)
 
 
 Version 1.1
