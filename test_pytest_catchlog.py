@@ -22,7 +22,7 @@ def test_nothing_logged(testdir):
     result.stdout.fnmatch_lines(['*- Captured stderr call -*',
                                  'text going to stderr'])
     py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured log -*'])
+                   ['*- Captured *log call -*'])
 
 
 def test_messages_logged(testdir):
@@ -40,7 +40,7 @@ def test_messages_logged(testdir):
         ''')
     result = testdir.runpytest()
     assert result.ret == 1
-    result.stdout.fnmatch_lines(['*- Captured log -*',
+    result.stdout.fnmatch_lines(['*- Captured *log call -*',
                                  '*text going to logger*'])
     result.stdout.fnmatch_lines(['*- Captured stdout call -*',
                                  'text going to stdout'])
@@ -70,13 +70,13 @@ def test_change_level(testdir):
         ''')
     result = testdir.runpytest()
     assert result.ret == 1
-    result.stdout.fnmatch_lines(['*- Captured log -*',
+    result.stdout.fnmatch_lines(['*- Captured *log call -*',
                                  '*handler INFO level*',
                                  '*logger CRITICAL level*'])
     py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured log -*', '*handler DEBUG level*'])
+                   ['*- Captured *log call -*', '*handler DEBUG level*'])
     py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured log -*', '*logger WARNING level*'])
+                   ['*- Captured *log call -*', '*logger WARNING level*'])
 
 
 @py.test.mark.skipif('sys.version_info < (2,5)')
@@ -103,13 +103,13 @@ def test_with_statement(testdir):
         ''')
     result = testdir.runpytest()
     assert result.ret == 1
-    result.stdout.fnmatch_lines(['*- Captured log -*',
+    result.stdout.fnmatch_lines(['*- Captured *log call -*',
                                  '*handler INFO level*',
                                  '*logger CRITICAL level*'])
     py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured log -*', '*handler DEBUG level*'])
+                   ['*- Captured *log call -*', '*handler DEBUG level*'])
     py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured log -*', '*logger WARNING level*'])
+                   ['*- Captured *log call -*', '*logger WARNING level*'])
 
 
 def test_log_access(testdir):
@@ -173,4 +173,4 @@ def test_disable_log_capturing(testdir):
     result.stdout.fnmatch_lines(['*- Captured stderr call -*',
                                  'text going to stderr'])
     py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured log -*'])
+                   ['*- Captured *log call -*'])

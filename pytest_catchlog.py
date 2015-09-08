@@ -2,6 +2,7 @@
 from __future__ import absolute_import, division, print_function
 
 import logging
+from contextlib import closing, contextmanager
 
 import pytest
 import py
@@ -62,55 +63,40 @@ class CatchLogPlugin(object):
                 get_option_ini(config, 'log_format'),
                 get_option_ini(config, 'log_date_format'))
 
-    def pytest_runtest_setup(self, item):
-        """Start capturing log messages for this test.
-
-        Creating a specific handler for each test ensures that we
-        avoid multi threading issues.
-
-        Attaching the handler and setting the level at the beginning
-        of each test ensures that we are setup to capture log
-        messages.
-        """
-
+    @pytest.mark.hookwrapper
+    def pytest_runtest_call(self, item):
         # Create a handler for this test.
-        item.catch_log_handler = CatchLogHandler()
-        item.catch_log_handler.setFormatter(self.formatter)
+        # Creating a specific handler for each test ensures that we
+        # avoid multi threading issues.
+        with closing(CatchLogHandler()) as log_handler:
+            log_handler.setFormatter(self.formatter)
 
-        # Attach the handler to the root logger and ensure that the
-        # root logger is set to log all levels.
-        root_logger = logging.getLogger()
-        root_logger.addHandler(item.catch_log_handler)
-        root_logger.setLevel(logging.NOTSET)
-
-    def pytest_runtest_makereport(self, __multicall__, item, call):
-        """Add captured log messages for this report."""
-
-        report = __multicall__.execute()
-
-        # This fn called after setup, call and teardown.  Only
-        # interested in just after test call has finished.
-        if call.when == 'call':
-
-            # Detach the handler from the root logger to ensure no
-            # further access to the handler.
+            # Attach the handler to the root logger and ensure that the
+            # root logger is set to log all levels.
             root_logger = logging.getLogger()
-            root_logger.removeHandler(item.catch_log_handler)
+            root_logger.addHandler(log_handler)
 
-            # For failed tests that have captured log messages add a
-            # captured log section to the report if desired.
-            if not report.passed and self.print_logs:
-                long_repr = getattr(report, 'longrepr', None)
-                if hasattr(long_repr, 'addsection'):
-                    log = item.catch_log_handler.stream.getvalue().strip()
-                    if log:
-                        long_repr.addsection('Captured log', log)
+            root_level = root_logger.level
+            root_logger.setLevel(logging.NOTSET)
 
-            # Release the handler resources.
-            item.catch_log_handler.close()
-            del item.catch_log_handler
+            item.catch_log_handler = log_handler
+            try:
 
-        return report
+                yield  # run test
+
+            finally:
+                del item.catch_log_handler
+
+                root_logger.level = root_level
+
+                # Detach the handler from the root logger to ensure no
+                # further access to the handler.
+                root_logger.removeHandler(log_handler)
+
+            if self.print_logs:
+                # Add a captured log section to the report.
+                log = log_handler.stream.getvalue().strip()
+                item.add_report_section('call', 'log', log)
 
 
 class CatchLogHandler(logging.StreamHandler):
@@ -139,10 +125,13 @@ class CatchLogHandler(logging.StreamHandler):
 class CatchLogFuncArg(object):
     """Provides access and control of log capturing."""
 
-    def __init__(self, handler):
-        """Creates a new funcarg."""
+    @property
+    def handler(self):
+        return self._item.catch_log_handler
 
-        self.handler = handler
+    def __init__(self, item):
+        """Creates a new funcarg."""
+        self._item = item
 
     def text(self):
         """Returns the log text."""
@@ -218,6 +207,6 @@ def caplog(request):
     * caplog.records()       -> list of logging.LogRecord instances
     * caplog.record_tuples() -> list of (logger_name, level, message) tuples
     """
-    return CatchLogFuncArg(request._pyfuncitem.catch_log_handler)
+    return CatchLogFuncArg(request.node)
 
 capturelog = caplog
