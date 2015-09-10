@@ -11,6 +11,65 @@ import py
 __version__ = '1.1'
 
 
+def get_logger_obj(logger=None):
+    """Get a logger object that can be specified by its name, or passed as is.
+
+    Defaults to the root logger.
+    """
+    if logger is None or isinstance(logger, py.builtin._basestring):
+        logger = logging.getLogger(logger)
+    return logger
+
+
+@contextmanager
+def logging_at_level(level, logger=None):
+    """Context manager that sets the level for capturing of logs."""
+    logger = get_logger_obj(logger)
+
+    orig_level = logger.level
+    logger.setLevel(level)
+    try:
+        yield
+    finally:
+        logger.setLevel(orig_level)
+
+
+@contextmanager
+def logging_using_handler(handler, logger=None):
+    """Context manager that safely register a given handler."""
+    logger = get_logger_obj(logger)
+
+    if handler in logger.handlers:  # reentrancy
+        # Adding the same handler twice would confuse logging system.
+        # Just don't do that.
+        yield
+    else:
+        logger.addHandler(handler)
+        try:
+            yield
+        finally:
+            logger.removeHandler(handler)
+
+
+@contextmanager
+def catching_logs(handler, filter=None, formatter=None,
+                  level=logging.NOTSET, logger=None):
+    """Context manager that prepares the whole logging machinery properly."""
+    logger = get_logger_obj(logger)
+
+    if filter is not None:
+        handler.addFilter(filter)
+    if formatter is not None:
+        handler.setFormatter(formatter)
+    handler.setLevel(level)
+
+    with closing(handler), \
+            logging_using_handler(handler, logger), \
+            logging_at_level(min(handler.level, logger.level), logger):
+
+        yield handler
+
+
 def add_option_ini(parser, option, dest, default=None, help=None):
     parser.addini(dest, default=default,
                   help='default value for ' + option)
@@ -65,33 +124,13 @@ class CatchLogPlugin(object):
 
     @pytest.mark.hookwrapper
     def pytest_runtest_call(self, item):
-        # Create a handler for this test.
-        # Creating a specific handler for each test ensures that we
-        # avoid multi threading issues.
-        with closing(CatchLogHandler()) as log_handler:
-            log_handler.setFormatter(self.formatter)
-
-            # Attach the handler to the root logger and ensure that the
-            # root logger is set to log all levels.
-            root_logger = logging.getLogger()
-            root_logger.addHandler(log_handler)
-
-            root_level = root_logger.level
-            root_logger.setLevel(logging.NOTSET)
-
+        with catching_logs(CatchLogHandler(),
+                           formatter=self.formatter) as log_handler:
             item.catch_log_handler = log_handler
             try:
-
                 yield  # run test
-
             finally:
                 del item.catch_log_handler
-
-                root_logger.level = root_level
-
-                # Detach the handler from the root logger to ensure no
-                # further access to the handler.
-                root_logger.removeHandler(log_handler)
 
             if self.print_logs:
                 # Add a captured log section to the report.
@@ -173,28 +212,7 @@ class CatchLogFuncArg(object):
         """
 
         obj = logger and logging.getLogger(logger) or self.handler
-        return CatchLogLevel(obj, level)
-
-
-class CatchLogLevel(object):
-    """Context manager that sets the logging level of a handler or logger."""
-
-    def __init__(self, obj, level):
-        """Creates a new log level context manager."""
-
-        self.obj = obj
-        self.level = level
-
-    def __enter__(self):
-        """Adjust the log level."""
-
-        self.orig_level = self.obj.level
-        self.obj.setLevel(self.level)
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """Restore the log level."""
-
-        self.obj.setLevel(self.orig_level)
+        return logging_at_level(level, obj)
 
 
 @pytest.fixture
