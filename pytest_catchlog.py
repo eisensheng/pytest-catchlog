@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, print_function
 
 import logging
 
+import pytest
 import py
 
 
@@ -207,13 +208,16 @@ class CatchLogLevel(object):
         self.obj.setLevel(self.orig_level)
 
 
-def pytest_funcarg__caplog(request):
-    """Returns a funcarg to access and control log capturing."""
+@pytest.fixture
+def caplog(request):
+    """Access and control log capturing.
 
+    Captured logs are available through the following methods::
+
+    * caplog.text()          -> string containing formatted log output
+    * caplog.records()       -> list of logging.LogRecord instances
+    * caplog.record_tuples() -> list of (logger_name, level, message) tuples
+    """
     return CatchLogFuncArg(request._pyfuncitem.catch_log_handler)
 
-
-def pytest_funcarg__capturelog(request):
-    """Returns a funcarg to access and control log capturing."""
-
-    return CatchLogFuncArg(request._pyfuncitem.catch_log_handler)
+capturelog = caplog
