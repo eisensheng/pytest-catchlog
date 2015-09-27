@@ -48,6 +48,50 @@ def test_messages_logged(testdir):
                                  'text going to stderr'])
 
 
+def test_setup_logging(testdir):
+    testdir.makepyfile('''
+        import sys
+        import logging
+
+        pytest_plugins = 'catchlog'
+
+        def setup_function(function):
+            logging.getLogger().info('text going to logger from setup')
+
+        def test_foo():
+            logging.getLogger().info('text going to logger from call')
+            assert False
+        ''')
+    result = testdir.runpytest()
+    assert result.ret == 1
+    result.stdout.fnmatch_lines(['*- Captured *log setup -*',
+                                 '*text going to logger from setup*',
+                                 '*- Captured *log call -*',
+                                 '*text going to logger from call*'])
+
+
+def test_teardown_logging(testdir):
+    testdir.makepyfile('''
+        import sys
+        import logging
+
+        pytest_plugins = 'catchlog'
+
+        def test_foo():
+            logging.getLogger().info('text going to logger from call')
+
+        def teardown_function(function):
+            logging.getLogger().info('text going to logger from teardown')
+            assert False
+        ''')
+    result = testdir.runpytest()
+    assert result.ret == 1
+    result.stdout.fnmatch_lines(['*- Captured *log call -*',
+                                 '*text going to logger from call*',
+                                 '*- Captured *log teardown -*',
+                                 '*text going to logger from teardown*'])
+
+
 def test_change_level(testdir):
     testdir.makepyfile('''
         import sys
