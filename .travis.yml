@@ -10,6 +10,10 @@ python:
   - "pypy3"
 
 install:
-  - pip install tox
+  - pip install -e .
 script:
-  - "tox -e ${TRAVIS_PYTHON_VERSION/[0-9].[0-9]/py${TRAVIS_PYTHON_VERSION/.}}"
+  - py.test
+
+cache:
+  directories:
+    - $HOME/.cache/pip/http
