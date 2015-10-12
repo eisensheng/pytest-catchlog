@@ -1,14 +1,12 @@
 import py
 
-pytest_plugins = 'pytester', 'catchlog'
+pytest_plugins = 'pytester'
 
 
 def test_nothing_logged(testdir):
     testdir.makepyfile('''
         import sys
         import logging
-
-        pytest_plugins = 'catchlog'
 
         def test_foo():
             sys.stdout.write('text going to stdout')
@@ -29,8 +27,6 @@ def test_messages_logged(testdir):
     testdir.makepyfile('''
         import sys
         import logging
-
-        pytest_plugins = 'catchlog'
 
         def test_foo():
             sys.stdout.write('text going to stdout')
@@ -53,8 +49,6 @@ def test_setup_logging(testdir):
         import sys
         import logging
 
-        pytest_plugins = 'catchlog'
-
         def setup_function(function):
             logging.getLogger().info('text going to logger from setup')
 
@@ -75,8 +69,6 @@ def test_teardown_logging(testdir):
         import sys
         import logging
 
-        pytest_plugins = 'catchlog'
-
         def test_foo():
             logging.getLogger().info('text going to logger from call')
 
@@ -96,8 +88,6 @@ def test_change_level(testdir):
     testdir.makepyfile('''
         import sys
         import logging
-
-        pytest_plugins = 'catchlog'
 
         def test_foo(caplog):
             caplog.set_level(logging.INFO)
@@ -130,8 +120,6 @@ def test_with_statement(testdir):
         import sys
         import logging
 
-        pytest_plugins = 'catchlog'
-
         def test_foo(caplog):
             with caplog.at_level(logging.INFO):
                 log = logging.getLogger()
@@ -161,8 +149,6 @@ def test_log_access(testdir):
         import sys
         import logging
 
-        pytest_plugins = 'catchlog'
-
         def test_foo(caplog):
             logging.getLogger().info('boo %s', 'arg')
             assert caplog.records()[0].levelname == 'INFO'
@@ -183,8 +169,6 @@ def test_record_tuples(testdir):
         import sys
         import logging
 
-        pytest_plugins = 'catchlog'
-
         def test_foo(caplog):
             logging.getLogger().info('boo %s', 'arg')
 
@@ -200,8 +184,6 @@ def test_disable_log_capturing(testdir):
     testdir.makepyfile('''
         import sys
         import logging
-
-        pytest_plugins = 'catchlog'
 
         def test_foo(caplog):
             sys.stdout.write('text going to stdout')
