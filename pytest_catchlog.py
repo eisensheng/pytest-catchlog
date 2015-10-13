@@ -125,7 +125,7 @@ class CatchLogPlugin(object):
     @contextmanager
     def _runtest_for(self, item, when):
         """Implements the internals of pytest_runtest_xxx() hook."""
-        with catching_logs(CatchLogHandler(),
+        with catching_logs(LogCaptureHandler(),
                            formatter=self.formatter) as log_handler:
             item.catch_log_handler = log_handler
             try:
@@ -154,7 +154,7 @@ class CatchLogPlugin(object):
             yield
 
 
-class CatchLogHandler(logging.StreamHandler):
+class LogCaptureHandler(logging.StreamHandler):
     """A logging handler that stores log records and the log text."""
 
     def __init__(self):
@@ -177,7 +177,7 @@ class CatchLogHandler(logging.StreamHandler):
         logging.StreamHandler.emit(self, record)
 
 
-class CatchLogFuncArg(object):
+class LogCaptureFixture(object):
     """Provides access and control of log capturing."""
 
     @property
@@ -241,6 +241,6 @@ def caplog(request):
     * caplog.records()       -> list of logging.LogRecord instances
     * caplog.record_tuples() -> list of (logger_name, level, message) tuples
     """
-    return CatchLogFuncArg(request.node)
+    return LogCaptureFixture(request.node)
 
 capturelog = caplog
