@@ -9,7 +9,9 @@ Version 1.2
 
 Yet to be released.
 
-- [Feature] #6 - Configure logging message and date format through ini file. (Thanks to @abusalimov)
+- [Feature] #6 - Configure logging message and date format through ini file. (Thanks to Eldar Abusalimov!)
+- [Feature] #7 - Also catch logs from setup and teardown stages. (Thanks to Eldar Abusalimov!)
+- [Feature] #7 - Replace deprecated ``__multicall__`` use to support future Py.test releases. (Thanks to Eldar Abusalimov!)
 
 
 Version 1.1
