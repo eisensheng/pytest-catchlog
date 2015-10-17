@@ -1,13 +1,73 @@
 # -*- coding: utf-8 -*-
-from __future__ import (absolute_import, print_function,
-                        unicode_literals, division)
+from __future__ import absolute_import, division, print_function
 
 import logging
+from contextlib import closing, contextmanager
 
+import pytest
 import py
 
 
 __version__ = '1.1'
+
+
+def get_logger_obj(logger=None):
+    """Get a logger object that can be specified by its name, or passed as is.
+
+    Defaults to the root logger.
+    """
+    if logger is None or isinstance(logger, py.builtin._basestring):
+        logger = logging.getLogger(logger)
+    return logger
+
+
+@contextmanager
+def logging_at_level(level, logger=None):
+    """Context manager that sets the level for capturing of logs."""
+    logger = get_logger_obj(logger)
+
+    orig_level = logger.level
+    logger.setLevel(level)
+    try:
+        yield
+    finally:
+        logger.setLevel(orig_level)
+
+
+@contextmanager
+def logging_using_handler(handler, logger=None):
+    """Context manager that safely register a given handler."""
+    logger = get_logger_obj(logger)
+
+    if handler in logger.handlers:  # reentrancy
+        # Adding the same handler twice would confuse logging system.
+        # Just don't do that.
+        yield
+    else:
+        logger.addHandler(handler)
+        try:
+            yield
+        finally:
+            logger.removeHandler(handler)
+
+
+@contextmanager
+def catching_logs(handler, filter=None, formatter=None,
+                  level=logging.NOTSET, logger=None):
+    """Context manager that prepares the whole logging machinery properly."""
+    logger = get_logger_obj(logger)
+
+    if filter is not None:
+        handler.addFilter(filter)
+    if formatter is not None:
+        handler.setFormatter(formatter)
+    handler.setLevel(level)
+
+    with closing(handler), \
+            logging_using_handler(handler, logger), \
+            logging_at_level(min(handler.level, logger.level), logger):
+
+        yield handler
 
 
 def add_option_ini(parser, option, dest, default=None, help=None):
@@ -62,58 +122,39 @@ class CatchLogPlugin(object):
                 get_option_ini(config, 'log_format'),
                 get_option_ini(config, 'log_date_format'))
 
+    @contextmanager
+    def _runtest_for(self, item, when):
+        """Implements the internals of pytest_runtest_xxx() hook."""
+        with catching_logs(LogCaptureHandler(),
+                           formatter=self.formatter) as log_handler:
+            item.catch_log_handler = log_handler
+            try:
+                yield  # run test
+            finally:
+                del item.catch_log_handler
+
+            if self.print_logs:
+                # Add a captured log section to the report.
+                log = log_handler.stream.getvalue().strip()
+                item.add_report_section(when, 'log', log)
+
+    @pytest.mark.hookwrapper
     def pytest_runtest_setup(self, item):
-        """Start capturing log messages for this test.
+        with self._runtest_for(item, 'setup'):
+            yield
 
-        Creating a specific handler for each test ensures that we
-        avoid multi threading issues.
+    @pytest.mark.hookwrapper
+    def pytest_runtest_call(self, item):
+        with self._runtest_for(item, 'call'):
+            yield
 
-        Attaching the handler and setting the level at the beginning
-        of each test ensures that we are setup to capture log
-        messages.
-        """
-
-        # Create a handler for this test.
-        item.catch_log_handler = CatchLogHandler()
-        item.catch_log_handler.setFormatter(self.formatter)
-
-        # Attach the handler to the root logger and ensure that the
-        # root logger is set to log all levels.
-        root_logger = logging.getLogger()
-        root_logger.addHandler(item.catch_log_handler)
-        root_logger.setLevel(logging.NOTSET)
-
-    def pytest_runtest_makereport(self, __multicall__, item, call):
-        """Add captured log messages for this report."""
-
-        report = __multicall__.execute()
-
-        # This fn called after setup, call and teardown.  Only
-        # interested in just after test call has finished.
-        if call.when == 'call':
-
-            # Detach the handler from the root logger to ensure no
-            # further access to the handler.
-            root_logger = logging.getLogger()
-            root_logger.removeHandler(item.catch_log_handler)
-
-            # For failed tests that have captured log messages add a
-            # captured log section to the report if desired.
-            if not report.passed and self.print_logs:
-                long_repr = getattr(report, 'longrepr', None)
-                if hasattr(long_repr, 'addsection'):
-                    log = item.catch_log_handler.stream.getvalue().strip()
-                    if log:
-                        long_repr.addsection('Captured log', log)
-
-            # Release the handler resources.
-            item.catch_log_handler.close()
-            del item.catch_log_handler
-
-        return report
+    @pytest.mark.hookwrapper
+    def pytest_runtest_teardown(self, item):
+        with self._runtest_for(item, 'teardown'):
+            yield
 
 
-class CatchLogHandler(logging.StreamHandler):
+class LogCaptureHandler(logging.StreamHandler):
     """A logging handler that stores log records and the log text."""
 
     def __init__(self):
@@ -136,13 +177,16 @@ class CatchLogHandler(logging.StreamHandler):
         logging.StreamHandler.emit(self, record)
 
 
-class CatchLogFuncArg(object):
+class LogCaptureFixture(object):
     """Provides access and control of log capturing."""
 
-    def __init__(self, handler):
-        """Creates a new funcarg."""
+    @property
+    def handler(self):
+        return self._item.catch_log_handler
 
-        self.handler = handler
+    def __init__(self, item):
+        """Creates a new funcarg."""
+        self._item = item
 
     def text(self):
         """Returns the log text."""
@@ -184,37 +228,19 @@ class CatchLogFuncArg(object):
         """
 
         obj = logger and logging.getLogger(logger) or self.handler
-        return CatchLogLevel(obj, level)
+        return logging_at_level(level, obj)
 
 
-class CatchLogLevel(object):
-    """Context manager that sets the logging level of a handler or logger."""
+@pytest.fixture
+def caplog(request):
+    """Access and control log capturing.
 
-    def __init__(self, obj, level):
-        """Creates a new log level context manager."""
+    Captured logs are available through the following methods::
 
-        self.obj = obj
-        self.level = level
+    * caplog.text()          -> string containing formatted log output
+    * caplog.records()       -> list of logging.LogRecord instances
+    * caplog.record_tuples() -> list of (logger_name, level, message) tuples
+    """
+    return LogCaptureFixture(request.node)
 
-    def __enter__(self):
-        """Adjust the log level."""
-
-        self.orig_level = self.obj.level
-        self.obj.setLevel(self.level)
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """Restore the log level."""
-
-        self.obj.setLevel(self.orig_level)
-
-
-def pytest_funcarg__caplog(request):
-    """Returns a funcarg to access and control log capturing."""
-
-    return CatchLogFuncArg(request._pyfuncitem.catch_log_handler)
-
-
-def pytest_funcarg__capturelog(request):
-    """Returns a funcarg to access and control log capturing."""
-
-    return CatchLogFuncArg(request._pyfuncitem.catch_log_handler)
+capturelog = caplog

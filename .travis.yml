@@ -1,14 +1,19 @@
-language: python
-python: 2.7
-env:
-  - TOX_ENV=pypy3
-  - TOX_ENV=pypy
-  - TOX_ENV=py34
-  - TOX_ENV=py33
-  - TOX_ENV=py32
-  - TOX_ENV=py27
-install:
-  - pip install tox
-script:
-  - tox -e $TOX_ENV
 sudo: false
+language: python
+python:
+  - "2.7"
+  - "3.2"
+  - "3.3"
+  - "3.4"
+  - "3.5"
+  - "pypy"
+  - "pypy3"
+
+install:
+  - pip install -e .
+script:
+  - py.test
+
+cache:
+  directories:
+    - $HOME/.cache/pip/http
