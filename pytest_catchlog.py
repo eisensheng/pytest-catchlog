@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import absolute_import, division, print_function
 
+import functools
 import logging
 from contextlib import closing, contextmanager
 
@@ -188,16 +189,17 @@ class LogCaptureFixture(object):
         """Creates a new funcarg."""
         self._item = item
 
+    @property
     def text(self):
         """Returns the log text."""
-
         return self.handler.stream.getvalue()
 
+    @property
     def records(self):
         """Returns the list of log records."""
-
         return self.handler.records
 
+    @property
     def record_tuples(self):
         """Returns a list of a striped down version of log records intended
         for use in assertion comparison.
@@ -206,7 +208,7 @@ class LogCaptureFixture(object):
 
             (logger_name, log_level, message)
         """
-        return [(r.name, r.levelno, r.getMessage()) for r in self.records()]
+        return [(r.name, r.levelno, r.getMessage()) for r in self.records]
 
     def set_level(self, level, logger=None):
         """Sets the level for capturing of logs.
@@ -231,8 +233,48 @@ class LogCaptureFixture(object):
         return logging_at_level(level, obj)
 
 
+class CallablePropertyMixin(object):
+    """Backward compatibility for functions that became properties."""
+
+    @classmethod
+    def compat_property(cls, func):
+        if isinstance(func, property):
+            make_property = func.getter
+            func = func.fget
+        else:
+            make_property = property
+
+        @functools.wraps(func)
+        def getter(self):
+            return cls(func(self))
+
+        return make_property(getter)
+
+    def __call__(self):
+        # TODO: emit a DeprecationWarning in future?
+        return self
+
+class CallableList(CallablePropertyMixin, list):
+    pass
+
+class CallableStr(CallablePropertyMixin, str):
+    pass
+
+
 class CompatLogCaptureFixture(LogCaptureFixture):
     """Backward compatibility with pytest-capturelog."""
+
+    @CallableStr.compat_property
+    def text(self):
+        return super(CompatLogCaptureFixture, self).text
+
+    @CallableList.compat_property
+    def records(self):
+        return super(CompatLogCaptureFixture, self).records
+
+    @CallableList.compat_property
+    def record_tuples(self):
+        return super(CompatLogCaptureFixture, self).record_tuples
 
     def setLevel(self, level, logger=None):
         return self.set_level(level, logger)

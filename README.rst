@@ -119,9 +119,9 @@ the contents of a message::
 
     def test_baz(caplog):
         func_under_test()
-        for record in caplog.records():
+        for record in caplog.records:
             assert record.levelname != 'CRITICAL'
-        assert 'wally' not in caplog.text()
+        assert 'wally' not in caplog.text
 
 For all the available attributes of the log records see the
 ``logging.LogRecord`` class.
@@ -133,7 +133,7 @@ given severity and message::
     def test_foo(caplog):
         logging.getLogger().info('boo %s', 'arg')
 
-        assert caplog.record_tuples() == [
+        assert caplog.record_tuples == [
             ('root', logging.INFO, 'boo arg'),
         ]
 
