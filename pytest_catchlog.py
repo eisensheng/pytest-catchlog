@@ -231,6 +231,16 @@ class LogCaptureFixture(object):
         return logging_at_level(level, obj)
 
 
+class CompatLogCaptureFixture(LogCaptureFixture):
+    """Backward compatibility with pytest-capturelog."""
+
+    def setLevel(self, level, logger=None):
+        return self.set_level(level, logger)
+
+    def atLevel(self, level, logger=None):
+        return self.at_level(level, logger)
+
+
 @pytest.fixture
 def caplog(request):
     """Access and control log capturing.
@@ -241,6 +251,6 @@ def caplog(request):
     * caplog.records()       -> list of logging.LogRecord instances
     * caplog.record_tuples() -> list of (logger_name, level, message) tuples
     """
-    return LogCaptureFixture(request.node)
+    return CompatLogCaptureFixture(request.node)
 
 capturelog = caplog

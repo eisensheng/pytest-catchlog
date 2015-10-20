@@ -180,6 +180,24 @@ def test_record_tuples(testdir):
     assert result.ret == 0
 
 
+def test_compat_camel_case_aliases(testdir):
+    testdir.makepyfile('''
+        import logging
+
+        def test_foo(caplog):
+            caplog.setLevel(logging.INFO)
+            logging.getLogger().debug('boo!')
+
+            with caplog.atLevel(logging.WARNING):
+                logging.getLogger().info('catch me if you can')
+        ''')
+    result = testdir.runpytest()
+    assert result.ret == 0
+
+    py.test.raises(Exception, result.stdout.fnmatch_lines,
+                   ['*- Captured *log call -*'])
+
+
 def test_disable_log_capturing(testdir):
     testdir.makepyfile('''
         import sys
