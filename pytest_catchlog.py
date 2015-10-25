@@ -246,12 +246,16 @@ class CallablePropertyMixin(object):
 
         @functools.wraps(func)
         def getter(self):
-            return cls(func(self))
+            ret = cls(func(self))
+            ret._warn_compat = self._warn_compat
+            ret._prop_name = func.__name__
+            return ret
 
         return make_property(getter)
 
     def __call__(self):
-        # TODO: emit a DeprecationWarning in future?
+        self._warn_compat(old="'caplog.{0}()' syntax".format(self._prop_name),
+                          new="'caplog.{0}' property".format(self._prop_name))
         return self
 
 class CallableList(CallablePropertyMixin, list):
@@ -263,6 +267,11 @@ class CallableStr(CallablePropertyMixin, str):
 
 class CompatLogCaptureFixture(LogCaptureFixture):
     """Backward compatibility with pytest-capturelog."""
+
+    def _warn_compat(self, old, new):
+        self._item.warn(code='L1',
+                        message=("{0} is deprecated, use {1} instead"
+                                 .format(old, new)))
 
     @CallableStr.compat_property
     def text(self):
@@ -277,9 +286,13 @@ class CompatLogCaptureFixture(LogCaptureFixture):
         return super(CompatLogCaptureFixture, self).record_tuples
 
     def setLevel(self, level, logger=None):
+        self._warn_compat(old="'caplog.setLevel()'",
+                          new="'caplog.set_level()'")
         return self.set_level(level, logger)
 
     def atLevel(self, level, logger=None):
+        self._warn_compat(old="'caplog.atLevel()'",
+                          new="'caplog.at_level()'")
         return self.at_level(level, logger)
 
 

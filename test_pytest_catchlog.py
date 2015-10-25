@@ -197,6 +197,14 @@ def test_compat_camel_case_aliases(testdir):
     py.test.raises(Exception, result.stdout.fnmatch_lines,
                    ['*- Captured *log call -*'])
 
+    result = testdir.runpytest('-rw')
+    assert result.ret == 0
+    result.stdout.fnmatch_lines('''
+        =*warning summary*=
+        *WL1*test_compat_camel_case_aliases*caplog.setLevel()*deprecated*
+        *WL1*test_compat_camel_case_aliases*caplog.atLevel()*deprecated*
+    ''')
+
 
 def test_compat_properties(testdir):
     testdir.makepyfile('''
@@ -212,6 +220,15 @@ def test_compat_properties(testdir):
         ''')
     result = testdir.runpytest()
     assert result.ret == 0
+
+    result = testdir.runpytest('-rw')
+    assert result.ret == 0
+    result.stdout.fnmatch_lines('''
+        =*warning summary*=
+        *WL1*test_compat_properties*caplog.text()*deprecated*
+        *WL1*test_compat_properties*caplog.records()*deprecated*
+        *WL1*test_compat_properties*caplog.record_tuples()*deprecated*
+    ''')
 
 
 def test_disable_log_capturing(testdir):
