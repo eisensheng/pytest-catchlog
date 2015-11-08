@@ -9,9 +9,12 @@ Version 1.2
 
 Yet to be released.
 
-- [Feature] #6 - Configure logging message and date format through ini file. (Thanks to Eldar Abusalimov!)
-- [Feature] #7 - Also catch logs from setup and teardown stages. (Thanks to Eldar Abusalimov!)
-- [Feature] #7 - Replace deprecated ``__multicall__`` use to support future Py.test releases. (Thanks to Eldar Abusalimov!)
+- [Feature] #6 - Configure logging message and date format through ini file.
+- [Feature] #7 - Also catch logs from setup and teardown stages.
+- [Feature] #7 - Replace deprecated ``__multicall__`` use to support future Py.test releases.
+- [Feature] #11 - reintroduce ``setLevel`` and ``atLevel`` to retain backward compatibility with pytest-capturelog.  Also the members ``text``, ``records`` and ``record_tuples`` of the ``caplog`` fixture can be used as properties now.
+
+Special thanks for this release goes to Eldar Abusalimov.  He provided all of the changed features.
 
 
 Version 1.1
