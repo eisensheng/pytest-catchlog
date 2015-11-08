@@ -5,10 +5,16 @@ List of notable changes between pytest-catchlog releases.
 
 .. %UNRELEASED_SECTION%
 
+`Unreleased`_
+-------------
+
+Yet to be released.
+
+
 Version 1.2
 -----------
 
-Yet to be released.
+Released on 2015-11-08.
 
 - [Feature] #6 - Configure logging message and date format through ini file.
 - [Feature] #7 - Also catch logs from setup and teardown stages.
