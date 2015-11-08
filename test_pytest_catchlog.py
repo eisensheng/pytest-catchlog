@@ -1,14 +1,12 @@
 import py
 
-pytest_plugins = 'pytester', 'catchlog'
+pytest_plugins = 'pytester'
 
 
 def test_nothing_logged(testdir):
     testdir.makepyfile('''
         import sys
         import logging
-
-        pytest_plugins = 'catchlog'
 
         def test_foo():
             sys.stdout.write('text going to stdout')
@@ -22,15 +20,13 @@ def test_nothing_logged(testdir):
     result.stdout.fnmatch_lines(['*- Captured stderr call -*',
                                  'text going to stderr'])
     py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured log -*'])
+                   ['*- Captured *log call -*'])
 
 
 def test_messages_logged(testdir):
     testdir.makepyfile('''
         import sys
         import logging
-
-        pytest_plugins = 'catchlog'
 
         def test_foo():
             sys.stdout.write('text going to stdout')
@@ -40,7 +36,7 @@ def test_messages_logged(testdir):
         ''')
     result = testdir.runpytest()
     assert result.ret == 1
-    result.stdout.fnmatch_lines(['*- Captured log -*',
+    result.stdout.fnmatch_lines(['*- Captured *log call -*',
                                  '*text going to logger*'])
     result.stdout.fnmatch_lines(['*- Captured stdout call -*',
                                  'text going to stdout'])
@@ -48,12 +44,50 @@ def test_messages_logged(testdir):
                                  'text going to stderr'])
 
 
-def test_change_level(testdir):
+def test_setup_logging(testdir):
     testdir.makepyfile('''
         import sys
         import logging
 
-        pytest_plugins = 'catchlog'
+        def setup_function(function):
+            logging.getLogger().info('text going to logger from setup')
+
+        def test_foo():
+            logging.getLogger().info('text going to logger from call')
+            assert False
+        ''')
+    result = testdir.runpytest()
+    assert result.ret == 1
+    result.stdout.fnmatch_lines(['*- Captured *log setup -*',
+                                 '*text going to logger from setup*',
+                                 '*- Captured *log call -*',
+                                 '*text going to logger from call*'])
+
+
+def test_teardown_logging(testdir):
+    testdir.makepyfile('''
+        import sys
+        import logging
+
+        def test_foo():
+            logging.getLogger().info('text going to logger from call')
+
+        def teardown_function(function):
+            logging.getLogger().info('text going to logger from teardown')
+            assert False
+        ''')
+    result = testdir.runpytest()
+    assert result.ret == 1
+    result.stdout.fnmatch_lines(['*- Captured *log call -*',
+                                 '*text going to logger from call*',
+                                 '*- Captured *log teardown -*',
+                                 '*text going to logger from teardown*'])
+
+
+def test_change_level(testdir):
+    testdir.makepyfile('''
+        import sys
+        import logging
 
         def test_foo(caplog):
             caplog.set_level(logging.INFO)
@@ -70,13 +104,13 @@ def test_change_level(testdir):
         ''')
     result = testdir.runpytest()
     assert result.ret == 1
-    result.stdout.fnmatch_lines(['*- Captured log -*',
+    result.stdout.fnmatch_lines(['*- Captured *log call -*',
                                  '*handler INFO level*',
                                  '*logger CRITICAL level*'])
     py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured log -*', '*handler DEBUG level*'])
+                   ['*- Captured *log call -*', '*handler DEBUG level*'])
     py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured log -*', '*logger WARNING level*'])
+                   ['*- Captured *log call -*', '*logger WARNING level*'])
 
 
 @py.test.mark.skipif('sys.version_info < (2,5)')
@@ -85,8 +119,6 @@ def test_with_statement(testdir):
         from __future__ import with_statement
         import sys
         import logging
-
-        pytest_plugins = 'catchlog'
 
         def test_foo(caplog):
             with caplog.at_level(logging.INFO):
@@ -103,13 +135,13 @@ def test_with_statement(testdir):
         ''')
     result = testdir.runpytest()
     assert result.ret == 1
-    result.stdout.fnmatch_lines(['*- Captured log -*',
+    result.stdout.fnmatch_lines(['*- Captured *log call -*',
                                  '*handler INFO level*',
                                  '*logger CRITICAL level*'])
     py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured log -*', '*handler DEBUG level*'])
+                   ['*- Captured *log call -*', '*handler DEBUG level*'])
     py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured log -*', '*logger WARNING level*'])
+                   ['*- Captured *log call -*', '*logger WARNING level*'])
 
 
 def test_log_access(testdir):
@@ -117,13 +149,11 @@ def test_log_access(testdir):
         import sys
         import logging
 
-        pytest_plugins = 'catchlog'
-
         def test_foo(caplog):
             logging.getLogger().info('boo %s', 'arg')
-            assert caplog.records()[0].levelname == 'INFO'
-            assert caplog.records()[0].msg == 'boo %s'
-            assert 'boo arg' in caplog.text()
+            assert caplog.records[0].levelname == 'INFO'
+            assert caplog.records[0].msg == 'boo %s'
+            assert 'boo arg' in caplog.text
         ''')
     result = testdir.runpytest()
     assert result.ret == 0
@@ -139,12 +169,10 @@ def test_record_tuples(testdir):
         import sys
         import logging
 
-        pytest_plugins = 'catchlog'
-
         def test_foo(caplog):
             logging.getLogger().info('boo %s', 'arg')
 
-            assert caplog.record_tuples() == [
+            assert caplog.record_tuples == [
                 ('root', logging.INFO, 'boo arg'),
             ]
         ''')
@@ -152,12 +180,61 @@ def test_record_tuples(testdir):
     assert result.ret == 0
 
 
+def test_compat_camel_case_aliases(testdir):
+    testdir.makepyfile('''
+        import logging
+
+        def test_foo(caplog):
+            caplog.setLevel(logging.INFO)
+            logging.getLogger().debug('boo!')
+
+            with caplog.atLevel(logging.WARNING):
+                logging.getLogger().info('catch me if you can')
+        ''')
+    result = testdir.runpytest()
+    assert result.ret == 0
+
+    py.test.raises(Exception, result.stdout.fnmatch_lines,
+                   ['*- Captured *log call -*'])
+
+    result = testdir.runpytest('-rw')
+    assert result.ret == 0
+    result.stdout.fnmatch_lines('''
+        =*warning summary*=
+        *WL1*test_compat_camel_case_aliases*caplog.setLevel()*deprecated*
+        *WL1*test_compat_camel_case_aliases*caplog.atLevel()*deprecated*
+    ''')
+
+
+def test_compat_properties(testdir):
+    testdir.makepyfile('''
+        import logging
+
+        def test_foo(caplog):
+            logging.getLogger().info('boo %s', 'arg')
+
+            assert caplog.text    == caplog.text()    == str(caplog.text)
+            assert caplog.records == caplog.records() == list(caplog.records)
+            assert (caplog.record_tuples ==
+                    caplog.record_tuples() == list(caplog.record_tuples))
+        ''')
+    result = testdir.runpytest()
+    assert result.ret == 0
+
+    result = testdir.runpytest('-rw')
+    assert result.ret == 0
+    result.stdout.fnmatch_lines('''
+        =*warning summary*=
+        *WL1*test_compat_properties*caplog.text()*deprecated*
+        *WL1*test_compat_properties*caplog.records()*deprecated*
+        *WL1*test_compat_properties*caplog.record_tuples()*deprecated*
+    ''')
+
+
 def test_disable_log_capturing(testdir):
     testdir.makepyfile('''
         import sys
         import logging
-
-        pytest_plugins = 'catchlog'
 
         def test_foo(caplog):
             sys.stdout.write('text going to stdout')
@@ -173,4 +250,4 @@ def test_disable_log_capturing(testdir):
     result.stdout.fnmatch_lines(['*- Captured stderr call -*',
                                  'text going to stderr'])
     py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured log -*'])
+                   ['*- Captured *log call -*'])
