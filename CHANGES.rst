@@ -3,6 +3,7 @@ Changelog
 
 List of notable changes between pytest-catchlog releases.
 
+.. %UNRELEASED_SECTION%
 
 Version 1.2
 -----------
