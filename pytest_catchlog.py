@@ -64,11 +64,11 @@ def catching_logs(handler, filter=None, formatter=None,
         handler.setFormatter(formatter)
     handler.setLevel(level)
 
-    with closing(handler), \
-            logging_using_handler(handler, logger), \
-            logging_at_level(min(handler.level, logger.level), logger):
+    with closing(handler):
+        with logging_using_handler(handler, logger):
+            with logging_at_level(min(handler.level, logger.level), logger):
 
-        yield handler
+                yield handler
 
 
 def add_option_ini(parser, option, dest, default=None, help=None):
