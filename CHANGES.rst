@@ -10,6 +10,8 @@ List of notable changes between pytest-catchlog releases.
 
 Yet to be released.
 
+- [Bugfix] #15 #17 - Restore Python 2.6 compatibility. (Thanks to Marco Nenciarini!)
+
 
 Version 1.2
 -----------
