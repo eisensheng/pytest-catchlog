@@ -12,6 +12,23 @@ Yet to be released.
 
 - [Bugfix] #15 #17 - Restore Python 2.6 compatibility. (Thanks to Marco Nenciarini!)
 
+.. attention::
+    Deprecation warning: the following objects (i.e. functions, properties)
+    are slated for removal in the next major release.
+
+    - ``caplog.at_level`` and ``caplog.set_level`` should be used instead of
+      ``caplog.atLevel`` and ``caplog.setLevel``.
+
+      The methods ``caplog.atLevel`` and ``caplog.setLevel`` are still
+      available but deprecated and not supported since they don't follow
+      the PEP8 convention for method names.
+
+    - ``caplog.text``, ``caplog.records`` and
+      ``caplog.record_tuples`` were turned into properties.
+      They still can be used as regular methods for backward compatibility,
+      but that syntax is considered deprecated and scheduled for removal in
+      the next major release.
+
 
 Version 1.2
 -----------
