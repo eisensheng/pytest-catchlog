@@ -18,7 +18,7 @@ clean: clean-pyc clean-coverage
 	-rm -rv build dist *.egg-info
 
 test:
-	py.test -v test_pytest_catchlog.py
+	py.test -v tests
 
 test-coverage:
 	coverage erase
