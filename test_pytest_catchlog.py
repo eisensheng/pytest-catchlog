@@ -2,7 +2,7 @@
 
 import sys
 
-import py
+import pytest
 
 pytest_plugins = 'pytester'
 
@@ -23,8 +23,8 @@ def test_nothing_logged(testdir):
                                  'text going to stdout'])
     result.stdout.fnmatch_lines(['*- Captured stderr call -*',
                                  'text going to stderr'])
-    py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured *log call -*'])
+    with pytest.raises(pytest.fail.Exception):
+        result.stdout.fnmatch_lines(['*- Captured *log call -*'])
 
 
 def test_messages_logged(testdir):
@@ -111,13 +111,14 @@ def test_change_level(testdir):
     result.stdout.fnmatch_lines(['*- Captured *log call -*',
                                  '*handler INFO level*',
                                  '*logger CRITICAL level*'])
-    py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured *log call -*', '*handler DEBUG level*'])
-    py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured *log call -*', '*logger WARNING level*'])
+    with pytest.raises(pytest.fail.Exception):
+        result.stdout.fnmatch_lines(['*- Captured *log call -*',
+                                     '*handler DEBUG level*'])
+    with pytest.raises(pytest.fail.Exception):
+        result.stdout.fnmatch_lines(['*- Captured *log call -*',
+                                     '*handler WARNING level*'])
 
 
-@py.test.mark.skipif('sys.version_info < (2,5)')
 def test_with_statement(testdir):
     testdir.makepyfile('''
         from __future__ import with_statement
@@ -142,10 +143,12 @@ def test_with_statement(testdir):
     result.stdout.fnmatch_lines(['*- Captured *log call -*',
                                  '*handler INFO level*',
                                  '*logger CRITICAL level*'])
-    py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured *log call -*', '*handler DEBUG level*'])
-    py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured *log call -*', '*logger WARNING level*'])
+    with pytest.raises(pytest.fail.Exception):
+        result.stdout.fnmatch_lines(['*- Captured *log call -*',
+                                     '*handler DEBUG level*'])
+    with pytest.raises(pytest.fail.Exception):
+        result.stdout.fnmatch_lines(['*- Captured *log call -*',
+                                     '*handler WARNING level*'])
 
 
 def test_log_access(testdir):
@@ -218,8 +221,8 @@ def test_compat_camel_case_aliases(testdir):
     result = testdir.runpytest()
     assert result.ret == 0
 
-    py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured *log call -*'])
+    with pytest.raises(pytest.fail.Exception):
+        result.stdout.fnmatch_lines(['*- Captured *log call -*'])
 
     result = testdir.runpytest('-rw')
     assert result.ret == 0
@@ -296,8 +299,8 @@ def test_disable_log_capturing(testdir):
                                  'text going to stdout'])
     result.stdout.fnmatch_lines(['*- Captured stderr call -*',
                                  'text going to stderr'])
-    py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured *log call -*'])
+    with pytest.raises(pytest.fail.Exception):
+        result.stdout.fnmatch_lines(['*- Captured *log call -*'])
 
 
 def test_disable_log_capturing_ini(testdir):
@@ -324,5 +327,5 @@ def test_disable_log_capturing_ini(testdir):
                                  'text going to stdout'])
     result.stdout.fnmatch_lines(['*- Captured stderr call -*',
                                  'text going to stderr'])
-    py.test.raises(Exception, result.stdout.fnmatch_lines,
-                   ['*- Captured *log call -*'])
+    with pytest.raises(pytest.fail.Exception):
+        result.stdout.fnmatch_lines(['*- Captured *log call -*'])
