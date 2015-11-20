@@ -7,7 +7,7 @@ from datetime import datetime
 
 from invoke import task, run
 
-VERSION_FILE = 'pytest_catchlog.py'
+VERSION_FILE = 'pytest_catchlog/__init__.py'
 CHANGE_LOG_FILE = 'CHANGES.rst'
 
 

@@ -27,7 +27,7 @@ test-coverage:
 	coverage xml
 
 audit:
-	flake8 pytest_catchlog.py
+	flake8 pytest_catchlog
 
 wheel:
 	python setup.py bdist_wheel

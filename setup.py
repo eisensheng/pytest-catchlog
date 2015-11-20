@@ -3,7 +3,7 @@ import io
 import os
 import re
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 def _read_text_file(file_name):
@@ -14,7 +14,7 @@ def _read_text_file(file_name):
 
 def _get_version():
     return re.search("__version__\s*=\s*'([^']+)'\s*",
-                     _read_text_file('pytest_catchlog.py')).group(1)
+                     _read_text_file('pytest_catchlog/__init__.py')).group(1)
 
 
 setup(name='pytest-catchlog',
@@ -26,9 +26,9 @@ setup(name='pytest-catchlog',
       author='Arthur Skowronek (Fork Author)',  # original author: Meme Dough
       author_email='eisensheng@mailbox.org',
       url='https://github.com/eisensheng/pytest-catchlog',
-      py_modules=['pytest_catchlog', ],
+      packages=find_packages(exclude=['tests']),
       install_requires=['py>=1.1.1', 'pytest>=2.6'],
-      entry_points={'pytest11': ['pytest_catchlog = pytest_catchlog']},
+      entry_points={'pytest11': ['pytest_catchlog = pytest_catchlog.plugin']},
       license='MIT License',
       zip_safe=False,
       keywords='py.test pytest logging',
