@@ -10,6 +10,7 @@ List of notable changes between pytest-catchlog releases.
 
 Yet to be released.
 
+- [Bugfix] #18 - Allow ``caplog.records()`` to be modified.  Thanks to Eldar Abusalimov for the PR and Marco Nenciarini for reporting the issue.
 - [Bugfix] #15 #17 - Restore Python 2.6 compatibility. (Thanks to Marco Nenciarini!)
 
 .. attention::
