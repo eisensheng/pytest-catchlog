@@ -246,7 +246,9 @@ class CallablePropertyMixin(object):
 
         @functools.wraps(func)
         def getter(self):
-            ret = cls(func(self))
+            naked_value = func(self)
+            ret = cls(naked_value)
+            ret._naked_value = naked_value
             ret._warn_compat = self._warn_compat
             ret._prop_name = func.__name__
             return ret
@@ -256,7 +258,7 @@ class CallablePropertyMixin(object):
     def __call__(self):
         self._warn_compat(old="'caplog.{0}()' syntax".format(self._prop_name),
                           new="'caplog.{0}' property".format(self._prop_name))
-        return self
+        return self._naked_value  # to let legacy clients modify the object
 
 class CallableList(CallablePropertyMixin, list):
     pass

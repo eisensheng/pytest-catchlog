@@ -231,6 +231,29 @@ def test_compat_properties(testdir):
     ''')
 
 
+def test_compat_records_modification(testdir):
+    testdir.makepyfile('''
+        import logging
+
+        logger = logging.getLogger()
+
+        def test_foo(caplog):
+            logger.info('boo %s', 'arg')
+            assert caplog.records
+            assert caplog.records()
+
+            del caplog.records()[:]  # legacy syntax
+            assert not caplog.records
+            assert not caplog.records()
+
+            logger.info('foo %s', 'arg')
+            assert caplog.records
+            assert caplog.records()
+        ''')
+    result = testdir.runpytest()
+    assert result.ret == 0
+
+
 def test_disable_log_capturing(testdir):
     testdir.makepyfile('''
         import sys
