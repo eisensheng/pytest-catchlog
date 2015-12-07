@@ -9,7 +9,7 @@ import pytest
 import py
 
 
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 
 def get_logger_obj(logger=None):
