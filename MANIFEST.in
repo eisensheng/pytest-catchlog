@@ -1,4 +1,5 @@
 include MANIFEST.in Makefile LICENSE.txt README.rst CHANGES.rst setup.cfg
+include test_pytest_catchlog.py
 
 global-exclude *pyc
 prune __pycache__
