@@ -1,6 +1,10 @@
 pytest-catchlog
 ===============
 
+.. image:: https://badges.gitter.im/Join%20Chat.svg
+   :alt: Join the chat at https://gitter.im/eisensheng/pytest-catchlog
+   :target: https://gitter.im/eisensheng/pytest-catchlog?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
 py.test plugin to catch log messages.  This is a fork of `pytest-capturelog`_.
 
 .. _`pytest-capturelog`: https://pypi.python.org/pypi/pytest-capturelog/
