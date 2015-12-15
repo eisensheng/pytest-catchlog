@@ -14,3 +14,20 @@ def pytest_addoption(parser):
         nargs='?', default='check', const='yes',
         help='Run performance tests (can be slow)',
     )
+
+    parser.addoption('--perf-graph',
+        action='store', dest='perf_graph_name',
+        nargs='?', default=None, const='graph.svg',
+        help='Plot a graph using data found in --benchmark-storage',
+    )
+    parser.addoption('--perf-expr',
+        action='store', dest='perf_expr_primary',
+        default='log_emit',
+        help='Benchmark (or expression combining benchmarks) to plot',
+    )
+    parser.addoption('--perf-expr-secondary',
+        action='store', dest='perf_expr_secondary',
+        default='caplog - stub',
+        help=('Benchmark (or expression combining benchmarks) to plot '
+              'as a secondary line'),
+    )
