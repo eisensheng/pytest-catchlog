@@ -9,12 +9,18 @@ python:
   - "3.5"
   - "pypy"
   - "pypy3"
+matrix:
+  include:
+    - python: "2.7"
+      env: TOXENV=perf
+
 before_install: |
   pip install tox "virtualenv<14.0.0" # recent versions don't run on Python 3.2
   if [ ! -v TOXENV ]
   then
     __py_ver=$TRAVIS_PYTHON_VERSION
-    export TOXENV=${__py_ver/[0-9].[0-9]/py${__py_ver/.}}
+    __tox_dfl=${__py_ver/[0-9].[0-9]/py${__py_ver/.}}
+    export TOXENV=${TOXENV:-$__tox_dfl}
   fi
   function announce()
     { echo -e "$ANSI_GREEN$@${ANSI_RESET}"; }
