@@ -30,9 +30,11 @@ before_install: |
 install: tox --notest
 script: tox
 
+before_cache:
+  - rm -rf $HOME/.cache/pip/log
 cache:
   directories:
-    - $HOME/.cache/pip/http
+    - $HOME/.cache/pip
 
 deploy:
   provider: pypi
