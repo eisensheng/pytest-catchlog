@@ -263,7 +263,7 @@ class CallablePropertyMixin(object):
 class CallableList(CallablePropertyMixin, list):
     pass
 
-class CallableStr(CallablePropertyMixin, str):
+class CallableStr(CallablePropertyMixin, py.builtin.text):
     pass
 
 

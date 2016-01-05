@@ -1,3 +1,7 @@
+# coding: utf-8
+
+import sys
+
 import py
 
 pytest_plugins = 'pytester'
@@ -155,6 +159,26 @@ def test_log_access(testdir):
             assert caplog.records[0].msg == 'boo %s'
             assert 'boo arg' in caplog.text
         ''')
+    result = testdir.runpytest()
+    assert result.ret == 0
+
+
+def test_unicode(testdir):
+    u = lambda x: x.decode('utf-8') if sys.version_info < (3,) else x
+    testdir.makepyfile(u('''
+        # coding: utf-8
+
+        import sys
+        import logging
+
+        u = lambda x: x.decode('utf-8') if sys.version_info < (3,) else x
+
+        def test_foo(caplog):
+            logging.getLogger().info(u('bū'))
+            assert caplog.records[0].levelname == 'INFO'
+            assert caplog.records[0].msg == u('bū')
+            assert u('bū') in caplog.text
+        '''))
     result = testdir.runpytest()
     assert result.ret == 0
 
