@@ -151,8 +151,15 @@ def _patch_change_log(new_version):
         if line == u'`Unreleased`_':
             return [u'`{}`_'.format(new_version)]
         elif line == u'Yet to be released.':
-            return [datetime.utcnow().strftime(u'Released on %F.')]
-        elif line == u'.. %UNRELEASED_SECTION%':
+            return [datetime.utcnow().strftime(u'Released on %Y-%m-%d UTC.')]
+    return _patch_file(CHANGE_LOG_FILE, __line_callback)
+
+
+@task(name='changelog-add-stub')
+def changelog_add_stub():
+    """Add new version changes stub to changelog file."""
+    def __line_callback(line):
+        if line == u'.. %UNRELEASED_SECTION%':
             return [u'.. %UNRELEASED_SECTION%',
                     u'',
                     u'`Unreleased`_',
