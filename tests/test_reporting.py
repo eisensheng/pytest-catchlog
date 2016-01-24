@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import pytest
 
 
@@ -260,3 +261,138 @@ def test_log_cli_ini_level(testdir):
 
     # make sure that that we get a '0' exit code for the testsuite
     assert result.ret == 0
+
+
+def test_log_file_cli(testdir):
+    # Default log file level
+    testdir.makepyfile('''
+        import pytest
+        import logging
+        def test_log_file(request):
+            plugin = request.config.pluginmanager.getplugin('_catch_log')
+            assert plugin.log_file_handler.level == logging.WARNING
+            logging.getLogger('catchlog').info("This log message won't be shown")
+            logging.getLogger('catchlog').warning("This log message will be shown")
+            print('PASSED')
+    ''')
+
+    log_file = testdir.tmpdir.join('pytest.log').strpath
+
+    result = testdir.runpytest('-s', '--log-file={0}'.format(log_file))
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines([
+        'test_log_file_cli.py PASSED',
+    ])
+
+    # make sure that that we get a '0' exit code for the testsuite
+    assert result.ret == 0
+    assert os.path.isfile(log_file)
+    with open(log_file) as rfh:
+        contents = rfh.read()
+        assert "This log message will be shown" in contents
+        assert "This log message won't be shown" not in contents
+
+
+def test_log_file_cli_level(testdir):
+    # Default log file level
+    testdir.makepyfile('''
+        import pytest
+        import logging
+        def test_log_file(request):
+            plugin = request.config.pluginmanager.getplugin('_catch_log')
+            assert plugin.log_file_handler.level == logging.INFO
+            logging.getLogger('catchlog').debug("This log message won't be shown")
+            logging.getLogger('catchlog').info("This log message will be shown")
+            print('PASSED')
+    ''')
+
+    log_file = testdir.tmpdir.join('pytest.log').strpath
+
+    result = testdir.runpytest('-s',
+                               '--log-file={0}'.format(log_file),
+                               '--log-file-level=INFO')
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines([
+        'test_log_file_cli_level.py PASSED',
+    ])
+
+    # make sure that that we get a '0' exit code for the testsuite
+    assert result.ret == 0
+    assert os.path.isfile(log_file)
+    with open(log_file) as rfh:
+        contents = rfh.read()
+        assert "This log message will be shown" in contents
+        assert "This log message won't be shown" not in contents
+
+
+def test_log_file_ini(testdir):
+    log_file = testdir.tmpdir.join('pytest.log').strpath
+
+    testdir.makeini(
+        """
+        [pytest]
+        log_file={0}
+        """.format(log_file))
+    testdir.makepyfile('''
+        import pytest
+        import logging
+        def test_log_file(request):
+            plugin = request.config.pluginmanager.getplugin('_catch_log')
+            assert plugin.log_file_handler.level == logging.WARNING
+            logging.getLogger('catchlog').info("This log message won't be shown")
+            logging.getLogger('catchlog').warning("This log message will be shown")
+            print('PASSED')
+    ''')
+
+    result = testdir.runpytest('-s')
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines([
+        'test_log_file_ini.py PASSED',
+    ])
+
+    # make sure that that we get a '0' exit code for the testsuite
+    assert result.ret == 0
+    assert os.path.isfile(log_file)
+    with open(log_file) as rfh:
+        contents = rfh.read()
+        assert "This log message will be shown" in contents
+        assert "This log message won't be shown" not in contents
+
+
+def test_log_file_ini_level(testdir):
+    log_file = testdir.tmpdir.join('pytest.log').strpath
+
+    testdir.makeini(
+        """
+        [pytest]
+        log_file={0}
+        log_file_level = INFO
+        """.format(log_file))
+    testdir.makepyfile('''
+        import pytest
+        import logging
+        def test_log_file(request):
+            plugin = request.config.pluginmanager.getplugin('_catch_log')
+            assert plugin.log_file_handler.level == logging.INFO
+            logging.getLogger('catchlog').debug("This log message won't be shown")
+            logging.getLogger('catchlog').info("This log message will be shown")
+            print('PASSED')
+    ''')
+
+    result = testdir.runpytest('-s')
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines([
+        'test_log_file_ini_level.py PASSED',
+    ])
+
+    # make sure that that we get a '0' exit code for the testsuite
+    assert result.ret == 0
+    assert os.path.isfile(log_file)
+    with open(log_file) as rfh:
+        contents = rfh.read()
+        assert "This log message will be shown" in contents
+        assert "This log message won't be shown" not in contents
