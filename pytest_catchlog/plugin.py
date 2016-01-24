@@ -74,6 +74,31 @@ def pytest_addoption(parser):
         dest='log_cli_date_format', default=None,
         help='log date format as used by the logging module.'
     )
+    add_option_ini(
+        parser,
+        '--log-file',
+        dest='log_file', default=None,
+        help='path to a file when logging will be written to.'
+    )
+    add_option_ini(
+        parser,
+        '--log-file-level',
+        dest='log_file_level', default=None,
+        help='log file logging level.'
+    )
+    add_option_ini(
+        parser,
+        '--log-file-format',
+        dest='log_file_format', default=DEFAULT_LOG_FORMAT,
+        help='log format as used by the logging module.'
+    )
+    add_option_ini(
+        parser,
+        '--log-file-date-format',
+        dest='log_file_date_format', default=DEFAULT_LOG_DATE_FORMAT,
+        help='log date format as used by the logging module.'
+    )
+
 
 
 def get_actual_log_level(config, setting_name):
@@ -108,6 +133,13 @@ def pytest_configure(config):
             # No log_level was provided, default to WARNING
             log_cli_level = logging.WARNING
     config._catchlog_log_cli_level = log_cli_level
+    config._catchlog_log_file = get_option_ini(config, 'log_file')
+    if config._catchlog_log_file:
+        log_file_level = get_actual_log_level(config, 'log_file_level')
+        if log_file_level is None:
+            # No log_level was provided, default to WARNING
+            log_file_level = logging.WARNING
+        config._catchlog_log_file_level = log_file_level
     config.pluginmanager.register(CatchLogPlugin(config), '_catch_log')
 
 
@@ -144,6 +176,26 @@ class CatchLogPlugin(object):
                 log_cli_format,
                 datefmt=log_cli_date_format)
         self.log_cli_handler.setFormatter(log_cli_formatter)
+        if config._catchlog_log_file:
+            log_file_format = get_option_ini(config, 'log_file_format')
+            if not log_file_format:
+                # No log file specific format was provided, use log_format
+                log_file_format = get_option_ini(config, 'log_format')
+            log_file_date_format = get_option_ini(config, 'log_file_date_format')
+            if not log_file_date_format:
+                # No log file specific date format was provided, use log_date_format
+                log_file_date_format = get_option_ini(config, 'log_date_format')
+            self.log_file_handler = logging.FileHandler(
+                config._catchlog_log_file,
+                # Each pytest runtests session will write to a clean logfile
+                mode='w',
+            )
+            log_file_formatter = logging.Formatter(
+                    log_file_format,
+                    datefmt=log_file_date_format)
+            self.log_file_handler.setFormatter(log_file_formatter)
+        else:
+            self.log_file_handler = None
 
     @contextmanager
     def _runtest_for(self, item, when):
@@ -181,7 +233,12 @@ class CatchLogPlugin(object):
         """Runs all collected test items."""
         with catching_logs(self.log_cli_handler,
                            level=session.config._catchlog_log_cli_level):
-            yield  # run all the tests
+            if self.log_file_handler is not None:
+                with catching_logs(self.log_file_handler,
+                                   level=session.config._catchlog_log_file_level):
+                    yield  # run all the tests
+            else:
+                yield  # run all the tests
 
 
 class LogCaptureHandler(logging.StreamHandler):
