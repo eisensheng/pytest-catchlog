@@ -5,10 +5,17 @@ List of notable changes between pytest-catchlog releases.
 
 .. %UNRELEASED_SECTION%
 
-`Unreleased`_
+`1.2.2`_
 -------------
 
-Yet to be released.
+Released on 2016-01-24 UTC.
+
+- [Bugfix] `#30`_ `#31`_ - Fix ``unicode`` vs ``str`` compatibility issues between Python2 and Python3.
+  (Thanks goes to `@sirex`_ for reporting the issue and providing a fix!)
+
+.. _#30: https://github.com/eisensheng/pytest-catchlog/issues/30
+.. _#31: https://github.com/eisensheng/pytest-catchlog/issues/31
+.. _@sirex: https://github.com/sirex
 
 
 `1.2.1`_

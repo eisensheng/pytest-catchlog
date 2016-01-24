@@ -18,3 +18,17 @@ script:
 cache:
   directories:
     - $HOME/.cache/pip/http
+
+deploy:
+  provider: pypi
+  distributions: 'sdist bdist_wheel'
+  on:
+    branch: 'master'
+    tags: true
+  password:
+    secure: >-
+      Yg5m1M3mhezSOdEA2bfQ/0tU4T5/kh9DjH11lvNVZA7QSY4AWp0Ri
+      38Ea5bk7HP24nlFAXFTrrWr5UJ2ZjdJ/P04tFIWA4yP1H+HU9IF8/
+      3FSauKjT2uzd0Cy7aP3PB5k2RFNPdtmHqCJr9o5yjAgT74Pv/dM5k
+      t8Qj3h5szdpI=
+  user: 'pytest-catchlog-ci'

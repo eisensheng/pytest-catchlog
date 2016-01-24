@@ -9,7 +9,7 @@ import pytest
 import py
 
 
-__version__ = '1.2.1'
+__version__ = '1.2.2'
 
 
 def get_logger_obj(logger=None):
@@ -263,7 +263,7 @@ class CallablePropertyMixin(object):
 class CallableList(CallablePropertyMixin, list):
     pass
 
-class CallableStr(CallablePropertyMixin, str):
+class CallableStr(CallablePropertyMixin, py.builtin.text):
     pass
 
 
