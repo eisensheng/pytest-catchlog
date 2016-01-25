@@ -147,3 +147,26 @@ given severity and message::
             ('root', logging.INFO, 'boo arg'),
         ]
 
+
+Live Logs
+~~~~~~~~~
+
+By default, catchlog will output any logging records with a level higher or equal
+to WARNING. In order to actually see these logs in the console you have to disable
+pytest output capture by passing ``-s``.
+
+You can specify the logging level for which log records with equal or higher level
+are printed to the console by passing ``--log-cli-level``. This setting accepts the
+logging level names as seen in python's documentation or an integer as the logging
+level num.
+
+Additionally, you can also specify ``--log-cli-format`` and ``--log-cli-date-format``
+which mirror and default to ``--log-format`` and ``--log-date-format`` if not
+provided, but are applied only to the console logging handler.
+
+All of the CLI log options can also be set in the configuration INI file. The option
+names are:
+
+* ``log_cli_level``
+* ``log_cli_format``
+* ``log_cli_date_format``
