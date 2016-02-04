@@ -298,3 +298,31 @@ def test_disable_log_capturing(testdir):
                                  'text going to stderr'])
     py.test.raises(Exception, result.stdout.fnmatch_lines,
                    ['*- Captured *log call -*'])
+
+
+def test_disable_log_capturing_ini(testdir):
+    testdir.makeini(
+        '''
+        [pytest]
+        log_print=False
+        '''
+    )
+    testdir.makepyfile('''
+        import sys
+        import logging
+
+        def test_foo(caplog):
+            sys.stdout.write('text going to stdout')
+            logging.getLogger().warning('catch me if you can!')
+            sys.stderr.write('text going to stderr')
+            assert False
+        ''')
+    result = testdir.runpytest()
+    print(result.stdout)
+    assert result.ret == 1
+    result.stdout.fnmatch_lines(['*- Captured stdout call -*',
+                                 'text going to stdout'])
+    result.stdout.fnmatch_lines(['*- Captured stderr call -*',
+                                 'text going to stderr'])
+    py.test.raises(Exception, result.stdout.fnmatch_lines,
+                   ['*- Captured *log call -*'])

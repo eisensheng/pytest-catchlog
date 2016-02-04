@@ -71,10 +71,11 @@ def catching_logs(handler, filter=None, formatter=None,
                 yield handler
 
 
-def add_option_ini(parser, option, dest, default=None, help=None):
+def add_option_ini(parser, option, dest, default=None, **kwargs):
     parser.addini(dest, default=default,
                   help='default value for ' + option)
-    parser.getgroup('catchlog').addoption(option, dest=dest, help=help)
+    parser.getgroup('catchlog').addoption(option, dest=dest, **kwargs)
+
 
 def get_option_ini(config, name):
     ret = config.getoption(name)  # 'default' arg won't work as expected
@@ -87,9 +88,10 @@ def pytest_addoption(parser):
     """Add options to control log capturing."""
 
     group = parser.getgroup('catchlog', 'Log catching')
-    group.addoption('--no-print-logs',
-                    dest='log_print', action='store_false', default=True,
-                    help='disable printing caught logs on failed tests.')
+    add_option_ini(parser,
+                   '--no-print-logs', default=True,
+                   dest='log_print', action='store_const', const=False,
+                   help='disable printing caught logs on failed tests.')
     add_option_ini(parser,
                    '--log-format',
                    dest='log_format', default=('%(filename)-25s %(lineno)4d'
@@ -118,7 +120,13 @@ class CatchLogPlugin(object):
         The formatter can be safely shared across all handlers so
         create a single one for the entire test session here.
         """
-        self.print_logs = config.getoption('log_print')
+        print_logs = get_option_ini(config, 'log_print')
+        if not isinstance(print_logs, bool):
+            if print_logs.lower() in ('true', 'yes', '1'):
+                print_logs = True
+            elif print_logs.lower() in ('false', 'no', '0'):
+                print_logs = False
+        self.print_logs = print_logs
         self.formatter = logging.Formatter(
                 get_option_ini(config, 'log_format'),
                 get_option_ini(config, 'log_date_format'))
