@@ -79,6 +79,12 @@ completely with::
 
     py.test --no-print-logs test_pytest_catchlog.py
 
+Or in you ``pytest.ini``::
+
+  [pytest]
+  log_print=False
+
+
 Shows failed tests in the normal manner as no logs were captured::
 
     ----------------------- Captured stdout call ----------------------
