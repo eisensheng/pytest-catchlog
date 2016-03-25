@@ -30,12 +30,12 @@ stderr.
 
 Running without options::
 
-    py.test test_pytest_catchlog.py
+    py.test
 
 Shows failed tests like so::
 
     ----------------------- Captured stdlog call ----------------------
-    test_pytest_catchlog.py    26 INFO     text going to logger
+    test_reporting.py    26 INFO     text going to logger
     ----------------------- Captured stdout call ----------------------
     text going to stdout
     ----------------------- Captured stderr call ----------------------
@@ -50,7 +50,7 @@ format can be specified to anything that the logging module supports.
 Running pytest specifying formatting options::
 
     py.test --log-format="%(asctime)s %(levelname)s %(message)s" \
-            --log-date-format="%Y-%m-%d %H:%M:%S" test_pytest_catchlog.py
+            --log-date-format="%Y-%m-%d %H:%M:%S"
 
 Shows failed tests like so::
 
@@ -77,7 +77,7 @@ error). Command line arguments take precedence.
 Further it is possible to disable reporting logs on failed tests
 completely with::
 
-    py.test --no-print-logs test_pytest_catchlog.py
+    py.test --no-print-logs
 
 Or in you ``pytest.ini``::
 
