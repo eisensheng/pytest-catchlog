@@ -23,6 +23,7 @@ __pycache__/
 
 # Unit test / coverage reports
 htmlcov/
+.benchmarks/
 .tox/
 .coverage
 .cache
