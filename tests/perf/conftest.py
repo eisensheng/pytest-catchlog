@@ -155,11 +155,8 @@ class BenchmarkEnv(dict):
                                             '(at least {found!r} and {key!r})'
                                             .format(**locals()))
                 found = key
-        if found is None:
-            raise pytest.UsageError('Unknown benchmark ID: '
-                                    'no test matches {lookup!r}: {self}'
-                                    .format(**locals()))
-        ret = self[found]
+
+        ret = self.get(found)  # treat unknown tests just as missing values
         if ret is None:
             # If an expression involves None (i.e. undefined),
             # the result must be also None.
