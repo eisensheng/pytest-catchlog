@@ -18,9 +18,9 @@ BENCH_DIR = py.path.local(__file__).dirpath('bench')
 
 mode_args_map = {
     'default':   [],
-    'noplugin':  ['-pno:pytest_catchlog'],
     'noprint':   ['--no-print-logs'],
     'nocapture': ['-s'],
+    'off':       ['-p', 'no:pytest_catchlog'],
 }
 
 
