@@ -11,6 +11,8 @@ import pytest
 PYTEST_PATH = (os.path.abspath(pytest.__file__.rstrip("oc"))
                .replace("$py.class", ".py"))
 
+POPEN_CLEANUP_TIMEOUT = 3 if (sys.version_info[0] >= 3) else 0  # Py3k only
+
 
 @pytest.fixture
 def popen(request):
@@ -28,8 +30,22 @@ def popen(request):
         kwargs['env'] = dict(env, **kwargs.get('env', {}))
 
         print('Running', ' '.join(args))
-        ret = subprocess.Popen(args, **kwargs).wait()
-        assert ret == 0
+        popen = subprocess.Popen(args, **kwargs)
+        try:
+            ret = popen.wait()
+        except KeyboardInterrupt as e:
+            # Before proceeding to the exit, give the child the last chance to
+            # cleanup. Otherwise, benchmark storage may happen to be read
+            # during preparing the final reporting (see ls_bench_storage(),
+            # called from handle_perf_graph()), while being concurrently
+            # modified by the child (pytest-benchmark writing results files).
+            try:
+                if POPEN_CLEANUP_TIMEOUT:
+                    popen.wait(timeout=POPEN_CLEANUP_TIMEOUT)
+            finally:
+                raise e
+        else:
+            assert ret == 0
 
     return popen_wait
 
