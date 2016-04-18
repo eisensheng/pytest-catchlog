@@ -46,23 +46,22 @@ def make_plot(trial_names, history, history2, expr, expr2):
         title="Speed in seconds",
         x_title="Trial",
         x_labels=trial_names,
+        x_label_rotation=15,
         include_x_axis=True,
         human_readable=True,
-        truncate_legend=8,
         style=style,
         stroke_style={'width': 2, 'dasharray': '20, 4'},
         **opts
     )
 
-    format_name = '{0} ({1})'.format
-
     for mode in sorted(history):
-        serie = history[mode]
-        plot.add(format_name(mode, expr), serie,
-                 stroke_style={'dasharray': 'none'})
+        serie = [{'value': value, 'label': expr}
+                 for value in history[mode]]
+        plot.add(mode, serie, stroke_style={'dasharray': 'none'})
 
     for mode in sorted(history2):
-        serie = history2[mode]
-        plot.add(format_name(mode, expr2), serie, secondary=True)
+        serie = [{'value': value, 'label': expr2}
+                 for value in history2[mode]]
+        plot.add(mode, serie, secondary=True)
 
     return plot
