@@ -1,5 +1,6 @@
 from __future__ import absolute_import, division, print_function
 
+import os
 import os.path
 try:
     from builtins import __dict__ as builtins
@@ -9,7 +10,7 @@ except ImportError:  # Python 2
 import py
 import pytest
 
-from .data import gen_dict, load_benchmarks
+from .data import gen_dict, load_benchmarks_from_files, ls_bench_storage
 from .plot import make_plot
 
 
@@ -18,21 +19,47 @@ BENCH_DIR = py.path.local(__file__).dirpath('bench')
 
 mode_args_map = {
     'default':   [],
-    'noplugin':  ['-pno:pytest_catchlog'],
     'noprint':   ['--no-print-logs'],
     'nocapture': ['-s'],
+    'off':       ['-p', 'no:pytest_catchlog'],
 }
 
 
-def pytest_configure(config):
-    if (config.getoption('run_perf') in ('yes', 'only') and
-        config.getoption('perf_graph_name')):
+def cleanup_garbage_files(filenames, terminalreporter, dry_run=False):
+    if not filenames:
+        return
+    writeln = terminalreporter.write_line
 
-        expr = config.getoption('perf_expr_primary')
-        expr2 = config.getoption('perf_expr_secondary')
-        if not (expr or expr2):
-            raise pytest.UsageError('perf-graph: Nothing to plot, '
-                                    'see --perf-expr')
+    writeln('perf-test: Benchmark data files missing for some run modes',
+            yellow=True, bold=(not dry_run))
+
+    if dry_run:
+        caption = 'Excess files to be removed on the next run'
+    else:
+        caption = 'Removing excess files'
+
+    writeln('perf-test: {0}:'.format(caption), yellow=True, bold=(not dry_run))
+
+    for filename in filenames:
+        writeln('\t{0}'.format(filename), light=dry_run, bold=(not dry_run))
+        if not dry_run:
+            os.remove(filename)
+
+
+def pytest_configure(config):
+    if config.getoption('run_perf') in ('yes', 'only'):
+        terminalreporter = config.pluginmanager.get_plugin("terminalreporter")
+        bench_storage = config.getoption('--benchmark-storage')
+        _, _, garbage = ls_bench_storage(bench_storage,
+                                         modes=sorted(mode_args_map))
+        cleanup_garbage_files(garbage, terminalreporter)
+
+        if config.getoption('perf_graph_name'):
+            expr = config.getoption('perf_expr_primary')
+            expr2 = config.getoption('perf_expr_secondary')
+            if not (expr or expr2):
+                raise pytest.UsageError('perf-graph: Nothing to plot, '
+                                        'see --perf-expr')
 
 
 def path_in_dir(path, dir=py.path.local(__file__).dirpath()):
@@ -89,15 +116,19 @@ def pytest_terminal_summary(terminalreporter):
 
 
 def handle_perf_graph(config, terminalreporter):
+    bench_storage = config.getoption('--benchmark-storage')
+    (trial_names,
+     benchmark_files,
+     garbage) = ls_bench_storage(bench_storage, modes=sorted(mode_args_map))
+    cleanup_garbage_files(garbage, terminalreporter, dry_run=True)
+
+    benchmarks = load_benchmarks_from_files(benchmark_files, trial_names)
+
     output_file = config.getoption('perf_graph_name')
     if not output_file:
         return
-
-    bench_storage = config.getoption('--benchmark-storage')
     output_file = os.path.join(bench_storage, output_file)
 
-    trial_names, benchmarks = load_benchmarks(bench_storage,
-                                              modes=sorted(mode_args_map))
     if not trial_names:
         terminalreporter.write_line(
             'perf-graph: No benchmarks found in {0}'.format(bench_storage),
@@ -155,11 +186,8 @@ class BenchmarkEnv(dict):
                                             '(at least {found!r} and {key!r})'
                                             .format(**locals()))
                 found = key
-        if found is None:
-            raise pytest.UsageError('Unknown benchmark ID: '
-                                    'no test matches {lookup!r}: {self}'
-                                    .format(**locals()))
-        ret = self[found]
+
+        ret = self.get(found)  # treat unknown tests just as missing values
         if ret is None:
             # If an expression involves None (i.e. undefined),
             # the result must be also None.
