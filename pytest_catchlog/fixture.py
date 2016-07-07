@@ -13,13 +13,13 @@ from pytest_catchlog.common import catching_logs, logging_at_level
 class LogCaptureFixture(object):
     """Provides access and control of log capturing."""
 
-    @property
-    def handler(self):
-        return self._item.catch_log_handler
-
     def __init__(self, item):
         """Creates a new funcarg."""
         self._item = item
+
+    @property
+    def handler(self):
+        return self._item.catch_log_handler
 
     @property
     def text(self):
