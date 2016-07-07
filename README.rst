@@ -147,6 +147,13 @@ given severity and message::
             ('root', logging.INFO, 'boo arg'),
         ]
 
+You can call ``caplog.clear()`` to reset the captured log records in a test::
+
+    def test_something_with_clearing_records(caplog):
+        some_method_that_creates_log_records()
+        caplog.clear()
+        your_test_method()
+        assert ['Foo'] == [rec.message for rec in caplog.records]
 
 Live Logs
 ~~~~~~~~~
