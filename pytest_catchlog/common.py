@@ -32,7 +32,7 @@ def logging_at_level(level, logger=None):
 
 @contextmanager
 def logging_using_handler(handler, logger=None):
-    """Context manager that safely register a given handler."""
+    """Context manager that safely registers a given handler."""
     logger = get_logger_obj(logger)
 
     if handler in logger.handlers:  # reentrancy
