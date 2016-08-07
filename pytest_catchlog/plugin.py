@@ -40,6 +40,12 @@ def pytest_addoption(parser):
         dest='log_print', action='store_const', const=False, default=True,
         help='disable printing caught logs on failed tests.'
     )
+    add_option_ini(
+        parser,
+        '--log-level',
+        dest='log_level', default=None,
+        help='logging level used by the logging module'
+    )
     add_option_ini(parser,
         '--log-format',
         dest='log_format', default=DEFAULT_LOG_FORMAT,
@@ -50,12 +56,58 @@ def pytest_addoption(parser):
         dest='log_date_format', default=DEFAULT_LOG_DATE_FORMAT,
         help='log date format as used by the logging module.'
     )
+    add_option_ini(
+        parser,
+        '--log-cli-level',
+        dest='log_cli_level', default=None,
+        help='cli logging level.'
+    )
+    add_option_ini(
+        parser,
+        '--log-cli-format',
+        dest='log_cli_format', default=None,
+        help='log format as used by the logging module.'
+    )
+    add_option_ini(
+        parser,
+        '--log-cli-date-format',
+        dest='log_cli_date_format', default=None,
+        help='log date format as used by the logging module.'
+    )
+
+
+def get_actual_log_level(config, setting_name):
+    """Return the actual logging level."""
+    log_level = get_option_ini(config, setting_name)
+    if not log_level:
+        return
+    if isinstance(log_level, py.builtin.text):
+        log_level = log_level.upper()
+    try:
+        return int(getattr(logging, log_level, log_level))
+    except ValueError:
+        # Python logging does not recognise this as a logging level
+        raise pytest.UsageError(
+            "'{0}' is not recognized as a logging level name for "
+            "'{1}'. Please consider passing the "
+            "logging level num instead.".format(
+                log_level,
+                setting_name))
 
 
 def pytest_configure(config):
     """Always register the log catcher plugin with py.test or tests can't
     find the  fixture function.
     """
+    log_cli_level = get_actual_log_level(config, 'log_cli_level')
+    if log_cli_level is None:
+        # No specific CLI logging level was provided, let's check
+        # log_level for a fallback
+        log_cli_level = get_actual_log_level(config, 'log_level')
+        if log_cli_level is None:
+            # No log_level was provided, default to WARNING
+            log_cli_level = logging.WARNING
+    config._catchlog_log_cli_level = log_cli_level
     config.pluginmanager.register(CatchLogPlugin(config), '_catch_log')
 
 
@@ -79,6 +131,19 @@ class CatchLogPlugin(object):
         self.formatter = logging.Formatter(
                 get_option_ini(config, 'log_format'),
                 get_option_ini(config, 'log_date_format'))
+        self.log_cli_handler = logging.StreamHandler(sys.stderr)
+        log_cli_format = get_option_ini(config, 'log_cli_format')
+        if not log_cli_format:
+            # No CLI specific format was provided, use log_format
+            log_cli_format = get_option_ini(config, 'log_format')
+        log_cli_date_format = get_option_ini(config, 'log_cli_date_format')
+        if not log_cli_date_format:
+            # No CLI specific date format was provided, use log_date_format
+            log_cli_date_format = get_option_ini(config, 'log_date_format')
+        log_cli_formatter = logging.Formatter(
+                log_cli_format,
+                datefmt=log_cli_date_format)
+        self.log_cli_handler.setFormatter(log_cli_formatter)
 
     @contextmanager
     def _runtest_for(self, item, when):
@@ -110,6 +175,13 @@ class CatchLogPlugin(object):
     def pytest_runtest_teardown(self, item):
         with self._runtest_for(item, 'teardown'):
             yield
+
+    @pytest.mark.hookwrapper
+    def pytest_runtestloop(self, session):
+        """Runs all collected test items."""
+        with catching_logs(self.log_cli_handler,
+                           level=session.config._catchlog_log_cli_level):
+            yield  # run all the tests
 
 
 class LogCaptureHandler(logging.StreamHandler):

@@ -138,3 +138,125 @@ def test_disable_log_capturing_ini(testdir):
                                  'text going to stderr'])
     with pytest.raises(pytest.fail.Exception):
         result.stdout.fnmatch_lines(['*- Captured *log call -*'])
+
+
+def test_log_cli_default_level(testdir):
+    # Default log file level
+    testdir.makepyfile('''
+        import pytest
+        import logging
+        def test_log_cli(request):
+            plugin = request.config.pluginmanager.getplugin('_catch_log')
+            assert plugin.log_cli_handler.level == logging.WARNING
+            logging.getLogger('catchlog').info("This log message won't be shown")
+            logging.getLogger('catchlog').warning("This log message will be shown")
+            print('PASSED')
+    ''')
+
+    result = testdir.runpytest('-s')
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines([
+        'test_log_cli_default_level.py PASSED',
+    ])
+    result.stderr.fnmatch_lines([
+        "* This log message will be shown"
+    ])
+    for line in result.errlines:
+        try:
+            assert "This log message won't be shown" in line
+            pytest.fail("A log message was shown and it shouldn't have been")
+        except AssertionError:
+            continue
+
+    # make sure that that we get a '0' exit code for the testsuite
+    assert result.ret == 0
+
+
+def test_log_cli_level(testdir):
+    # Default log file level
+    testdir.makepyfile('''
+        import pytest
+        import logging
+        def test_log_cli(request):
+            plugin = request.config.pluginmanager.getplugin('_catch_log')
+            assert plugin.log_cli_handler.level == logging.INFO
+            logging.getLogger('catchlog').debug("This log message won't be shown")
+            logging.getLogger('catchlog').info("This log message will be shown")
+            print('PASSED')
+    ''')
+
+    result = testdir.runpytest('-s', '--log-cli-level=INFO')
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines([
+        'test_log_cli_level.py PASSED',
+    ])
+    result.stderr.fnmatch_lines([
+        "* This log message will be shown"
+    ])
+    for line in result.errlines:
+        try:
+            assert "This log message won't be shown" in line
+            pytest.fail("A log message was shown and it shouldn't have been")
+        except AssertionError:
+            continue
+
+    # make sure that that we get a '0' exit code for the testsuite
+    assert result.ret == 0
+
+    result = testdir.runpytest('-s', '--log-level=INFO')
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines([
+        'test_log_cli_level.py PASSED',
+    ])
+    result.stderr.fnmatch_lines([
+        "* This log message will be shown"
+    ])
+    for line in result.errlines:
+        try:
+            assert "This log message won't be shown" in line
+            pytest.fail("A log message was shown and it shouldn't have been")
+        except AssertionError:
+            continue
+
+    # make sure that that we get a '0' exit code for the testsuite
+    assert result.ret == 0
+
+
+def test_log_cli_ini_level(testdir):
+    testdir.makeini(
+        """
+        [pytest]
+        log_cli_level = INFO
+        """)
+    testdir.makepyfile('''
+        import pytest
+        import logging
+        def test_log_cli(request):
+            plugin = request.config.pluginmanager.getplugin('_catch_log')
+            assert plugin.log_cli_handler.level == logging.INFO
+            logging.getLogger('catchlog').debug("This log message won't be shown")
+            logging.getLogger('catchlog').info("This log message will be shown")
+            print('PASSED')
+    ''')
+
+    result = testdir.runpytest('-s')
+
+    # fnmatch_lines does an assertion internally
+    result.stdout.fnmatch_lines([
+        'test_log_cli_ini_level.py PASSED',
+    ])
+    result.stderr.fnmatch_lines([
+        "* This log message will be shown"
+    ])
+    for line in result.errlines:
+        try:
+            assert "This log message won't be shown" in line
+            pytest.fail("A log message was shown and it shouldn't have been")
+        except AssertionError:
+            continue
+
+    # make sure that that we get a '0' exit code for the testsuite
+    assert result.ret == 0
