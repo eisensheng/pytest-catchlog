@@ -42,6 +42,10 @@ class LogCaptureFixture(object):
         """
         return [(r.name, r.levelno, r.getMessage()) for r in self.records]
 
+    def clear(self):
+        """Reset the list of log records."""
+        self.handler.records = []
+
     def set_level(self, level, logger=None):
         """Sets the level for capturing of logs.
 
@@ -88,8 +92,11 @@ class CallablePropertyMixin(object):
         return make_property(getter)
 
     def __call__(self):
+        new = "'caplog.{0}' property".format(self._prop_name)
+        if self._prop_name == 'records':
+            new += ' (or caplog.clear())'
         self._warn_compat(old="'caplog.{0}()' syntax".format(self._prop_name),
-                          new="'caplog.{0}' property".format(self._prop_name))
+                          new=new)
         return self._naked_value  # to let legacy clients modify the object
 
 

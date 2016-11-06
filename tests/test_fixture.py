@@ -2,7 +2,6 @@
 import sys
 import logging
 
-import pytest
 
 logger = logging.getLogger(__name__)
 sublogger = logging.getLogger(__name__+'.baz')
@@ -65,3 +64,36 @@ def test_unicode(caplog):
     assert caplog.records[0].levelname == 'INFO'
     assert caplog.records[0].msg == u('bū')
     assert u('bū') in caplog.text
+
+
+def test_clear(caplog):
+    logger.info(u('bū'))
+    assert len(caplog.records)
+    caplog.clear()
+    assert not len(caplog.records)
+
+
+def test_special_warning_with_del_records_warning(testdir):
+    p1 = testdir.makepyfile("""
+        def test_del_records_inline(caplog):
+            del caplog.records()[:]
+    """)
+    result = testdir.runpytest_subprocess(p1)
+    result.stdout.fnmatch_lines([
+        "WL1 test_*.py:1 'caplog.records()' syntax is deprecated,"
+        " use 'caplog.records' property (or caplog.clear()) instead",
+        "*1 pytest-warnings*",
+    ])
+
+
+def test_warning_with_setLevel(testdir):
+    p1 = testdir.makepyfile("""
+        def test_inline(caplog):
+            caplog.setLevel(0)
+    """)
+    result = testdir.runpytest_subprocess(p1)
+    result.stdout.fnmatch_lines([
+        "WL1 test_*.py:1 'caplog.setLevel()' is deprecated,"
+        " use 'caplog.set_level()' instead",
+        "*1 pytest-warnings*",
+    ])
