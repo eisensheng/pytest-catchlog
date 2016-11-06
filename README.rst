@@ -177,3 +177,24 @@ names are:
 * ``log_cli_level``
 * ``log_cli_format``
 * ``log_cli_date_format``
+
+If you need to record the whole test suite logging calls to a file, you can 
+pass
+``--log-file=/path/to/log/file``. This log file is opened in write mode which means
+that it will be overwritten at each run tests session.
+
+You can also specify the logging level for the log file by passing
+``--log-file-level``. This setting accepts the logging level names as seen in python's
+documentation(ie, uppercased level names) or an integer as the logging level num.
+
+Additionally, you can also specify ``--log-file-format`` and ``--log-file-date-format``
+which are equal to ``--log-format`` and ``--log-date-format`` but are applied to the
+log file logging handler.
+
+All of the log file options can also be set in the configuration INI file. The option
+names are:
+
+* ``log_file``
+* ``log_file_level``
+* ``log_file_format``
+* ``log_file_date_format``
