@@ -94,7 +94,7 @@ Shows failed tests in the normal manner as no logs were captured::
     ==================== 2 failed in 0.02 seconds =====================
 
 Inside tests it is possible to change the log level for the captured
-log messages.  This is supported by the ``caplog`` funcarg::
+log messages.  This is supported by the ``caplog`` fixture::
 
     def test_foo(caplog):
         caplog.set_level(logging.INFO)
@@ -123,7 +123,7 @@ of any logger can be changed instead with::
             pass
 
 Lastly all the logs sent to the logger during the test run are made
-available on the funcarg in the form of both the LogRecord instances
+available on the fixture in the form of both the LogRecord instances
 and the final log text.  This is useful for when you want to assert on
 the contents of a message::
 
