@@ -1,5 +1,5 @@
-pytest-catchlog
-===============
+pytest-catchlog (deprecated!)
+=============================
 
 .. image:: https://badges.gitter.im/Join%20Chat.svg
    :alt: Join the chat at https://gitter.im/eisensheng/pytest-catchlog
@@ -7,7 +7,10 @@ pytest-catchlog
 
 py.test plugin to catch log messages.  This is a fork of `pytest-capturelog`_.
 
+**As of pytest 3.3, the functionality of this plugin has been merged to the pytest core.** See the pytest `logging documentation`_ for details.
+
 .. _`pytest-capturelog`: https://pypi.python.org/pypi/pytest-capturelog/
+.. _`logging documentation`:  https://docs.pytest.org/en/latest/logging.html
 
 
 Installation
